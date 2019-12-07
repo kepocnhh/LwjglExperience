@@ -31,7 +31,7 @@ class STBAdvancedFontRender(
     private val lineHeight: Float
 
     init {
-        val source = Any::class.java.getResourceAsStream(fullPathFont)!!
+        val source = STBAdvancedFontRender::class.java.getResourceAsStream(fullPathFont)!!
         val fontByteBuffer = ioResourceToByteBuffer(source, 1024)
         val pixels = BufferUtils.createByteBuffer(size.width * size.height)
         STBTTPackContext.malloc().use { packContext ->
@@ -74,7 +74,7 @@ class STBAdvancedFontRender(
         )
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
-        lineHeight = getTextHeight("M")
+        lineHeight = getTextHeight("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
     }
 
     private fun getTextHeight(text: CharSequence): Float {

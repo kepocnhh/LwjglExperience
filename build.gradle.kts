@@ -26,7 +26,12 @@ application {
 
 tasks.named<JavaExec>("run") {
     doFirst {
-        jvmArgs = listOf("-XstartOnFirstThread")
+	    val currentOperatingSystem = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()
+	    when {
+	        currentOperatingSystem.isMacOsX -> {
+	        	jvmArgs = listOf("-XstartOnFirstThread")
+	        }
+	    }
     }
 }
 
@@ -36,6 +41,7 @@ dependencies {
     val currentOperatingSystem = org.gradle.nativeplatform.platform.internal.DefaultNativePlatform.getCurrentOperatingSystem()
     val natives = when {
         currentOperatingSystem.isMacOsX -> "natives-macos"
+        currentOperatingSystem.isWindows -> "natives-windows"
         else -> throw IllegalStateException()
     }
     "org.lwjgl".also { group ->
