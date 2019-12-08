@@ -9,10 +9,12 @@ import lwjgl.util.lwjgl.ioResourceToByteBuffer
 import lwjgl.util.lwjgl.stb.bakeFontBitmap
 import lwjgl.util.lwjgl.stb.getBakedQuad
 import lwjgl.util.lwjgl.stb.getPackedQuad
+import lwjgl.util.lwjgl.stb.packFontRange
 import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.stb.*
 import org.lwjgl.system.MemoryUtil
+import kotlin.math.absoluteValue
 
 interface FontRender {
     fun drawText(color: Color, pointTopLeft: Point, text: CharSequence)
@@ -22,11 +24,16 @@ class STBAdvancedFontRender(
     fullPathFont: String,
     private val fontHeight: Float
 ): FontRender {
+    companion object {
+        private const val firstUnicodeCharInRange = 32
+    }
+
     private val textureId: Int = GL11.glGenTextures()
     private val alignedQuad = STBTTAlignedQuad.malloc()
     private val xBuffer = BufferUtils.createFloatBuffer(1)
     private val yBuffer = BufferUtils.createFloatBuffer(1)
-    private val charBuffer = STBTTPackedchar.malloc(6 * 128)
+    private val limit = Char.MAX_VALUE.toInt()
+    private val charBuffer = STBTTPackedchar.malloc(limit)
     private val size = Size(512, 512)
     private val lineHeight: Float
 
@@ -38,27 +45,16 @@ class STBAdvancedFontRender(
             STBTruetype.stbtt_PackBegin(
                 packContext, pixels, size.width, size.height, 0, 1, MemoryUtil.NULL
             )
-//            for(i in 0..1) {
-//                for(j in 0..2) {
-//                    val p = (i * 3 + j) * 128 + 32
-//                    charBuffer.limit(p + 95)
-//                    charBuffer.position(p)
-//                    STBTruetype.stbtt_PackSetOversampling(packContext, j + 1, if(j%2 == 0) 1 else 2)
-//                    STBTruetype.stbtt_PackFontRange(
-//                        packContext, fontByteBuffer, 0,
-////                        scale[i],
-//                        48f,
-//                        32, charBuffer
-//                    )
-//                }
-//            }
-            charBuffer.limit(32 + 95)
-            charBuffer.position(32)
+            charBuffer.limit(limit)
+            charBuffer.position(firstUnicodeCharInRange)
             STBTruetype.stbtt_PackSetOversampling(packContext, 1, 1)
-            STBTruetype.stbtt_PackFontRange(
-                packContext, fontByteBuffer, 0,
-                fontHeight,
-                32, charBuffer
+            packFontRange(
+                packContext,
+                fontByteBuffer = fontByteBuffer,
+                fontIndex = 0,
+                fontSize = fontHeight,
+                firstUnicodeCharInRange = firstUnicodeCharInRange,
+                charBufferForRange = charBuffer
             )
             charBuffer.clear()
             STBTruetype.stbtt_PackEnd(packContext)
@@ -74,9 +70,30 @@ class STBAdvancedFontRender(
         )
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
-        lineHeight = getTextHeight("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        val englishAlphabet = "abcdefghijklmnopqrstuvwxyz"
+        val russianAlphabet = "абвгдеёжзиклмнопрстуфхцчшщЪыьэюя"
+        val specialCharacters = "!@#$%^&*()[];'\\,./{}:\"|<>?`~"
+        lineHeight = getTextHeight(
+            englishAlphabet +
+            englishAlphabet.toUpperCase() +
+            russianAlphabet +
+            russianAlphabet.toUpperCase() +
+            specialCharacters
+        )
     }
 
+    private fun getCharHeight(value: Char): Float {
+        getPackedQuad(
+            buffer = charBuffer,
+            bufferSize = size,
+            charIndex = value.toInt(),
+            xBuffer = xBuffer,
+            yBuffer = yBuffer,
+            alignedQuad = alignedQuad
+        )
+//        return alignedQuad.y1() - alignedQuad.y0()
+        return alignedQuad.y0().absoluteValue
+    }
     private fun getTextHeight(text: CharSequence): Float {
         var result = 0f
         xBuffer.put(0, 0f)
@@ -86,18 +103,10 @@ class STBAdvancedFontRender(
                 yBuffer.put(0, yBuffer.get(0))
                 xBuffer.put(0, 0f)
                 continue
-            } else if(c < 32.toChar() || c > 128.toChar()) {
+            } else if(c < firstUnicodeCharInRange.toChar()) {
                 continue
             }
-            getPackedQuad(
-                buffer = charBuffer,
-                bufferSize = size,
-                charIndex = c.toInt(),
-                xBuffer = xBuffer,
-                yBuffer = yBuffer,
-                alignedQuad = alignedQuad
-            )
-            val height = alignedQuad.y1() - alignedQuad.y0()
+            val height = getCharHeight(c)
             if(height > result) {
                 result = height
             }
@@ -111,13 +120,6 @@ class STBAdvancedFontRender(
         xBuffer.put(0, x)
         yBuffer.put(0, y)
 
-//        val font = 3//todo
-        val font = 0//todo
-//        val font = (3 + 1) % 3 + (3 / 3) * 3
-        charBuffer.position(font * 128)
-//        charBuffer.position(128)
-//        charBuffer.position(0)
-
         GL11.glEnable(GL11.GL_BLEND)
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA)
 
@@ -125,18 +127,14 @@ class STBAdvancedFontRender(
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId)
 
         glColorOf(color)
-//        GL11.glTranslatef(x, y + fontHeight, 0f)
-//        xBuffer.put(0, 0f)
-//        yBuffer.put(0, 0f)
 
         glTransaction(GL11.GL_QUADS) {
             for(c in text.toString()) {
                 if(c == '\n') {
                     yBuffer.put(0, yBuffer.get(0) + fontHeight)
-//                    yBuffer.put(0, yBuffer.get(0) + lineHeight)
                     xBuffer.put(0, 0f)
                     continue
-                } else if(c < 32.toChar() || c > 128.toChar()) {
+                } else if(c < firstUnicodeCharInRange.toChar()) {
                     continue
                 }
                 getPackedQuad(
@@ -191,7 +189,7 @@ class STBFontRender(
     private val fontHeight: Float
 ): FontRender {
     private val textureId: Int = GL11.glGenTextures()
-    private val buffer = STBTTBakedChar.malloc(96)
+    private val buffer = STBTTBakedChar.malloc(Char.MAX_VALUE.toInt())
     private val size = Size(512, 512)
     private val xBuffer = BufferUtils.createFloatBuffer(1)
     private val yBuffer = BufferUtils.createFloatBuffer(1)
@@ -200,6 +198,8 @@ class STBFontRender(
     init {
         val source = Any::class.java.getResourceAsStream(fullPathFont)!!
         val pixels = BufferUtils.createByteBuffer(size.width * size.height)
+        buffer.limit(Char.MAX_VALUE.toInt())
+        buffer.position(32)
         bakeFontBitmap(
             fontData = ioResourceToByteBuffer(source, 1024),
             fontHeightInPixels = fontHeight,
@@ -224,33 +224,32 @@ class STBFontRender(
 
     override fun drawText(color: Color, pointTopLeft: Point, text: CharSequence) {
         val x = pointTopLeft.x
-        val y = pointTopLeft.y
+        val y = pointTopLeft.y + fontHeight
+        xBuffer.put(0, x)
+        yBuffer.put(0, y)
 
-//        GL11.glEnable(GL11.GL_BLEND)
-//        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA)
+        GL11.glEnable(GL11.GL_BLEND)
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA)
 
+        GL11.glEnable(GL11.GL_TEXTURE_2D)
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId)
+
         glColorOf(color)
 
-        GL11.glPushMatrix()
-        GL11.glTranslatef(x, y + fontHeight, 0f)
-
-        xBuffer.put(0, 0.0f)
-        yBuffer.put(0, 0.0f)
         glTransaction(GL11.GL_QUADS) {
             for(c in text.toString()) {
                 if(c == '\n') {
                     yBuffer.put(0, yBuffer.get(0) + fontHeight)
                     xBuffer.put(0, 0f)
                     continue
-                } else if(c < 32.toChar() || c > 128.toChar()) {
+                } else if(c < 32.toChar()) {
                     continue
                 }
 
                 getBakedQuad(
                     buffer = buffer,
                     bufferSize = size,
-                    charIndex = (c - 32).toInt(),
+                    charIndex = c.toInt() - 32,
                     xBuffer = xBuffer,
                     yBuffer = yBuffer,
                     alignedQuad = alignedQuad
@@ -290,7 +289,7 @@ class STBFontRender(
                 )
             }
         }
-        GL11.glPopMatrix()
-//        GL11.glDisable(GL11.GL_BLEND)
+
+        GL11.glDisable(GL11.GL_BLEND)
     }
 }

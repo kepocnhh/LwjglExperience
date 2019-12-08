@@ -72,3 +72,21 @@ fun bakeFontBitmap(
         charData
     )
 }
+
+fun packFontRange(
+    packContext: STBTTPackContext,
+    fontByteBuffer: ByteBuffer,
+    fontIndex: Int,
+    fontSize: Float,
+    firstUnicodeCharInRange: Int,
+    charBufferForRange: STBTTPackedchar.Buffer
+) {
+    STBTruetype.stbtt_PackFontRange(
+        packContext,
+        fontByteBuffer,
+        fontIndex,
+        fontSize,
+        firstUnicodeCharInRange,
+        charBufferForRange
+    )
+}
