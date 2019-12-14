@@ -87,28 +87,40 @@ private fun onRender(canvas: Canvas) {
         size = Size(150, 50)
     )
 
+    val h = 48
+    canvas.drawRectangle(
+        color = Color(0f, 1f, 1f),
+        pointTopLeft = Point(0, 300),
+        size = Size(300, h+1)
+    )
+    canvas.drawRectangle(
+        color = Color.RED,
+        pointTopLeft = Point(0, 300),
+        size = Size(300, h/4)
+    )
     canvas.drawText(
         color = Color.BLACK,
         pointTopLeft = Point(0, 300),
 //        text = "abcdefghijklmnopqrstuvwxyz\ntest"
 //        text = "abCDpqPQyY\ntest"
-        text = "абВГдДёЁуУфФцЦщЩъЪ\ntest"
+        text = "jqQбВГдДЁуУфФцЦщЩъЪ\ntest"
 //        text = "€"
     )
     canvas.drawRectangle(
-        color = Color.RED,
+        color = Color(1f, 0f, 1f),
         pointTopLeft = Point(0, 300),
-        size = Size(150, 24)
+        size = Size(300, h/2 + 1)
     )
+
     canvas.drawText(
         color = Color.BLACK,
-        pointTopLeft = Point(0, 350),
+        pointTopLeft = Point(0, 300 + h*2),
 //        text = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         text = "!@#$%^&*()"
     )
     canvas.drawRectangle(
         color = Color.RED,
-        pointTopLeft = Point(0, 350),
-        size = Size(150, 24)
+        pointTopLeft = Point(0, 300 + h*2),
+        size = Size(300, h)
     )
 }

@@ -2,7 +2,6 @@ package lwjgl.window
 
 import lwjgl.canvas.Canvas
 import lwjgl.entity.*
-import lwjgl.util.glfw.glfwGetMonitorContentScale
 import lwjgl.util.glfw.glfwGetWindowSize
 import lwjgl.util.glfw.key.glfwKeyCallback
 import lwjgl.util.glfw.opengl.glColorOf
@@ -144,7 +143,7 @@ fun loopWindow(windowId: Long, monitorId: Long, onRender: (Canvas) -> Unit) {
 //    GL11.glEnable(GL11.GL_BLEND)
 //    GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA)
 //    GL11.glEnable(GL11.GL_TEXTURE_2D)
-    val fullPathFont = "/font.ttf"
+    val fullPathFont = "/font.consolas.ttf"
     val canvas = WindowCanvas(
         windowId,
 //        fontRender = STBFontRender(

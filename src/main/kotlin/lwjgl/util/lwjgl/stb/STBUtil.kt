@@ -1,6 +1,8 @@
 package lwjgl.util.lwjgl.stb
 
+import lwjgl.entity.Point
 import lwjgl.entity.Size
+import org.lwjgl.BufferUtils
 import org.lwjgl.stb.*
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
@@ -88,5 +90,52 @@ fun packFontRange(
         fontSize,
         firstUnicodeCharInRange,
         charBufferForRange
+    )
+}
+
+data class FontVMetrics(
+    val ascent: Int,
+    val descent: Int,
+    val lineGap: Int
+)
+
+fun getFontVMetrics(fontInfo: STBTTFontinfo): FontVMetrics {
+    val ascentBuffer = BufferUtils.createIntBuffer(1)
+    val descentBuffer = BufferUtils.createIntBuffer(1)
+    val lineGapBuffer = BufferUtils.createIntBuffer(1)
+    STBTruetype.stbtt_GetFontVMetrics(fontInfo, ascentBuffer, descentBuffer, lineGapBuffer)
+    return FontVMetrics(
+        ascent = ascentBuffer[0],
+        descent = descentBuffer[0],
+        lineGap = lineGapBuffer[0]
+    )
+}
+
+data class Box(
+    val point0: Point,
+    val point1: Point
+)
+
+fun getCodepointBox(fontInfo: STBTTFontinfo, value: Char): Box {
+    val x0Buffer = BufferUtils.createIntBuffer(1)
+    val y0Buffer = BufferUtils.createIntBuffer(1)
+    val x1Buffer = BufferUtils.createIntBuffer(1)
+    val y1Buffer = BufferUtils.createIntBuffer(1)
+    STBTruetype.stbtt_GetCodepointBox(fontInfo, value.toInt(), x0Buffer, y0Buffer, x1Buffer, y1Buffer)
+    return Box(
+        point0 = Point(x = x0Buffer[0], y = y0Buffer[0]),
+        point1 = Point(x = x1Buffer[0], y = y1Buffer[0])
+    )
+}
+
+fun getGlyphBox(fontInfo: STBTTFontinfo, value: Char): Box {
+    val x0Buffer = BufferUtils.createIntBuffer(1)
+    val y0Buffer = BufferUtils.createIntBuffer(1)
+    val x1Buffer = BufferUtils.createIntBuffer(1)
+    val y1Buffer = BufferUtils.createIntBuffer(1)
+    STBTruetype.stbtt_GetGlyphBox(fontInfo, value.toInt(), x0Buffer, y0Buffer, x1Buffer, y1Buffer)
+    return Box(
+        point0 = Point(x = x0Buffer[0], y = y0Buffer[0]),
+        point1 = Point(x = x1Buffer[0], y = y1Buffer[0])
     )
 }

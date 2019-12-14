@@ -1,8 +1,5 @@
 package lwjgl.entity
 
-const val MAX_VALUE = 1f
-const val MIN_VALUE = 0f
-
 data class Color(
     val red: Float,
     val green: Float,
@@ -10,6 +7,9 @@ data class Color(
     val alpha: Float = MAX_VALUE
 ) {
     companion object {
+        const val MAX_VALUE = 1f
+        const val MIN_VALUE = 0f
+
         val BLACK = Color(MIN_VALUE, MIN_VALUE, MIN_VALUE)
         val RED = Color(MAX_VALUE, MIN_VALUE, MIN_VALUE)
         val GREEN = Color(MIN_VALUE, MAX_VALUE, MIN_VALUE)
@@ -27,5 +27,5 @@ data class Color(
 }
 
 private fun assertColorValue(colorValue: Float) {
-    if(colorValue < MIN_VALUE || colorValue > MAX_VALUE) throw IllegalStateException()
+    if(colorValue < Color.MIN_VALUE || colorValue > Color.MAX_VALUE) throw IllegalStateException()
 }
