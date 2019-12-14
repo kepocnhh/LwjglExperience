@@ -34,7 +34,8 @@ class STBAdvancedFontRender(
     private val limit = Char.MAX_VALUE.toInt()
     private val charBuffer = STBTTPackedchar.malloc(limit)
 //    private val size = Size(512, 512)
-    private val size = Size(1024, 1024)
+//    private val size = Size(1024, 1024)
+    private val size = Size(2048, 2048)
 //    private val size: Size
     private val lineHeight: Float
 
@@ -102,6 +103,8 @@ class STBAdvancedFontRender(
         )
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR)
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR)
+//        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT)
+//        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT)
         val englishAlphabet = "abcdefghijklmnopqrstuvwxyz"
         val russianAlphabet = "абвгдеёжзиклмнопрстуфхцчшщЪыьэюя"
 //        val russianAlphabet = ""
@@ -117,7 +120,8 @@ class STBAdvancedFontRender(
         println("fontVMetrics: $fontVMetrics")
         val scaleAscent = fontHeight / fontVMetrics.ascent
         println("scaleAscent: $scaleAscent")
-        lineHeight = fontHeight/(fontVMetrics.ascent.toFloat() - fontVMetrics.descent.toFloat() - fontVMetrics.lineGap.toFloat())*fontVMetrics.ascent.toFloat()
+//        lineHeight = fontHeight/(fontVMetrics.ascent.toFloat() - fontVMetrics.descent.toFloat())*fontVMetrics.ascent.toFloat()
+        lineHeight = fontHeight/(fontVMetrics.ascent.toFloat() - fontVMetrics.descent.toFloat() - fontVMetrics.lineGap.toFloat()/2)*fontVMetrics.ascent.toFloat()
         println("lineHeight: $lineHeight")
 
         val testString = "jqQбВГдДЁуУфФцЦщЩъЪ"

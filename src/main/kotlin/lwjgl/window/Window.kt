@@ -41,6 +41,10 @@ fun createWindow(
     if(!GLFW.glfwInit()) throw IllegalStateException("Unable to initialize GLFW")
     println("create window | init")
     GLFW.glfwDefaultWindowHints()
+
+//    GLFW.glfwWindowHint(GLFW.GLFW_STENCIL_BITS, 4)
+//    GLFW.glfwWindowHint(GLFW.GLFW_SAMPLES, 4)
+
     GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, isVisible.toGLFWInt())
     GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, isResizable.toGLFWInt())
     val windowId = GLFW.glfwCreateWindow(
@@ -143,13 +147,17 @@ fun loopWindow(windowId: Long, monitorId: Long, onRender: (Canvas) -> Unit) {
 //    GL11.glEnable(GL11.GL_BLEND)
 //    GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA)
 //    GL11.glEnable(GL11.GL_TEXTURE_2D)
-    val fullPathFont = "/font.consolas.ttf"
+//    val fullPathFont = "/font.consolas.ttf"
+//    val fullPathFont = "/font.sfmono.ttf"
+//    val fullPathFont = "/font.roboto.ttf"
+    val fullPathFont = "/font.poiret.ttf"
+//    val fullPathFont = "/font.main.ttf"
     val canvas = WindowCanvas(
         windowId,
 //        fontRender = STBFontRender(
         fontRender = STBAdvancedFontRender(
             fullPathFont = fullPathFont,
-            fontHeight = 24f
+            fontHeight = 48f
         )
     )
     println("loop window: $windowId | start loop")
