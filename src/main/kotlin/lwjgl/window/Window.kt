@@ -155,10 +155,11 @@ fun loopWindow(windowId: Long, monitorId: Long, onRender: (Canvas) -> Unit) {
     val canvas = WindowCanvas(
         windowId,
 //        fontRender = STBFontRender(
-        fontRender = STBAdvancedFontRender(
-            fullPathFont = fullPathFont,
-            fontHeight = 48f
-        )
+//        fontRender = STBAdvancedFontRender(
+//            fullPathFont = fullPathFont,
+//            fontHeight = 48f
+//        )
+        fontRender = fontRender()
     )
     println("loop window: $windowId | start loop")
     while(!GLFW.glfwWindowShouldClose(windowId)) {
@@ -238,14 +239,20 @@ private class WindowCanvas(
         }
     }
 
+//    override fun drawText(
+//        color: Color, pointTopLeft: Point, text: CharSequence
+//    ) {
+//        fontRender.drawText(color, pointTopLeft, text)
+//    }
+
     override fun drawText(
-        color: Color, pointTopLeft: Point, text: CharSequence
+        fullPathFont: String,
+        fontHeight: Float,
+        pointTopLeft: Point,
+        color: Color,
+        text: CharSequence
     ) {
-//        val windowSize = getWindowSize()
-//        val (x, y) = pointTopLeft.toWindowPoint(windowSize)
-//        fontRender.drawText(color, Point(x, y), text)
-//        fontRender.drawText(color, pointTopLeft.toWindowPoint(windowSize), text)
-        fontRender.drawText(color, pointTopLeft, text)
+        fontRender.drawText(fullPathFont, fontHeight, pointTopLeft, color, text)
     }
 
 //    private fun Point.toWindowPoint() = toWindowPoint(windowId)

@@ -60,24 +60,32 @@ private fun onRender(canvas: Canvas) {
     )
 
     canvas.drawText(
-        color = Color.BLUE,
+        fullPathFont = "/font.poiret.ttf",
+        fontHeight = 24f,
         pointTopLeft = Point(50f, 50f),
+        color = Color.BLUE,
         text = "50x50 blue"
     )
     canvas.drawText(
-        color = Color.RED,
+        fullPathFont = "/font.poiret.ttf",
+        fontHeight = 24f,
         pointTopLeft = Point(100f, 100f),
+        color = Color.RED,
         text = "100x100 red"
     )
     canvas.drawText(
-        color = Color.GREEN,
+        fullPathFont = "/font.poiret.ttf",
+        fontHeight = 24f,
         pointTopLeft = Point(2, 18),
+        color = Color.GREEN,
         text = "2x18 green"
     )
 
     canvas.drawText(
-        color = Color.BLACK,
+        fullPathFont = "/font.poiret.ttf",
+        fontHeight = 24f,
         pointTopLeft = Point(0, 0),
+        color = Color.BLACK,
         text = "0x0 black"
     )
 
@@ -99,12 +107,11 @@ private fun onRender(canvas: Canvas) {
         size = Size(300, h/4)
     )
     canvas.drawText(
-        color = Color.BLACK,
+        fullPathFont = "/font.poiret.ttf",
+        fontHeight = 24f,
         pointTopLeft = Point(0, 300),
-//        text = "abcdefghijklmnopqrstuvwxyz\ntest"
-//        text = "abCDpqPQyY\ntest"
+        color = Color.BLACK,
         text = "jqQбВГдДЁуУфФцЦщЩъЪ\ntest"
-//        text = "€"
     )
     canvas.drawRectangle(
         color = Color(1f, 0f, 1f),
@@ -113,9 +120,10 @@ private fun onRender(canvas: Canvas) {
     )
 
     canvas.drawText(
-        color = Color.BLACK,
+        fullPathFont = "/font.poiret.ttf",
+        fontHeight = 24f,
         pointTopLeft = Point(0, 300 + h*2),
-//        text = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        color = Color.BLACK,
         text = "!@#$%^&*()"
     )
     canvas.drawRectangle(
