@@ -11,13 +11,11 @@ import org.lwjgl.BufferUtils
 import org.lwjgl.opengl.GL11
 import org.lwjgl.stb.*
 import org.lwjgl.system.MemoryUtil
+import java.io.FileInputStream
 import java.io.PrintStream
 import kotlin.math.absoluteValue
 import kotlin.math.sqrt
 
-fun fontRender(): FontRender {
-    return AdvancedFontRender()
-}
 interface FontRender {
     fun drawText(
         fullPathFont: String,
@@ -28,6 +26,10 @@ interface FontRender {
     )
 }
 
+fun fontRender(): FontRender {
+    return AdvancedFontRender()
+}
+
 private const val firstUnicodeCharInRange = 32
 private const val charBufferLimit = Char.MAX_VALUE.toInt()
 private val bufferSize = Size(2048, 2048)
@@ -35,10 +37,46 @@ private val bufferSize = Size(2048, 2048)
 private class FontInfo(
     val textureId: Int,
     val lineHeight: Float,
-    val fontHeight: Float
+    val fontHeight: Float,
+    val charBuffer: STBTTPackedchar.Buffer
 )
 
 private val mapFontInfo = mutableMapOf<String, FontInfo>()
+
+private fun drawAlignedQuad(alignedQuad: STBTTAlignedQuad) {
+    GL11.glTexCoord2f(
+        alignedQuad.s0(),
+        alignedQuad.t0()
+    )
+    glVertexOf(
+        alignedQuad.x0(),
+        alignedQuad.y0()
+    )
+    GL11.glTexCoord2f(
+        alignedQuad.s1(),
+        alignedQuad.t0()
+    )
+    glVertexOf(
+        alignedQuad.x1(),
+        alignedQuad.y0()
+    )
+    GL11.glTexCoord2f(
+        alignedQuad.s1(),
+        alignedQuad.t1()
+    )
+    glVertexOf(
+        alignedQuad.x1(),
+        alignedQuad.y1()
+    )
+    GL11.glTexCoord2f(
+        alignedQuad.s0(),
+        alignedQuad.t1()
+    )
+    glVertexOf(
+        alignedQuad.x0(),
+        alignedQuad.y1()
+    )
+}
 
 private class AdvancedFontRender: FontRender {
 
@@ -64,57 +102,26 @@ private class AdvancedFontRender: FontRender {
 
         glColorOf(color)
 
-        val charBuffer = STBTTPackedchar.malloc(charBufferLimit)
-        val alignedQuad = STBTTAlignedQuad.malloc()
-        glTransaction(GL11.GL_QUADS) {
-            for(c in text.toString()) {
-                if(c == '\n') {
-                    yBuffer.put(0, yBuffer.get(0) + fontInfo.fontHeight)
-                    xBuffer.put(0, 0f)
-                    continue
-                } else if(c < firstUnicodeCharInRange.toChar()) {
-                    continue
+        STBTTAlignedQuad.malloc().use { alignedQuad ->
+            glTransaction(GL11.GL_QUADS) {
+                for(c in text.toString()) {
+                    if(c == '\n') {
+                        yBuffer.put(0, yBuffer.get(0) + fontInfo.fontHeight)
+                        xBuffer.put(0, 0f)
+                        continue
+                    } else if(c < firstUnicodeCharInRange.toChar()) {
+                        continue
+                    }
+                    getPackedQuad(
+                        buffer = fontInfo.charBuffer,
+                        bufferSize = bufferSize,
+                        charIndex = c.toInt(),
+                        xBuffer = xBuffer,
+                        yBuffer = yBuffer,
+                        alignedQuad = alignedQuad
+                    )
+                    drawAlignedQuad(alignedQuad)
                 }
-                getPackedQuad(
-                    buffer = charBuffer,
-                    bufferSize = bufferSize,
-                    charIndex = c.toInt(),
-                    xBuffer = xBuffer,
-                    yBuffer = yBuffer,
-                    alignedQuad = alignedQuad
-                )
-                GL11.glTexCoord2f(
-                    alignedQuad.s0(),
-                    alignedQuad.t0()
-                )
-                glVertexOf(
-                    alignedQuad.x0(),
-                    alignedQuad.y0()
-                )
-                GL11.glTexCoord2f(
-                    alignedQuad.s1(),
-                    alignedQuad.t0()
-                )
-                glVertexOf(
-                    alignedQuad.x1(),
-                    alignedQuad.y0()
-                )
-                GL11.glTexCoord2f(
-                    alignedQuad.s1(),
-                    alignedQuad.t1()
-                )
-                glVertexOf(
-                    alignedQuad.x1(),
-                    alignedQuad.y1()
-                )
-                GL11.glTexCoord2f(
-                    alignedQuad.s0(),
-                    alignedQuad.t1()
-                )
-                glVertexOf(
-                    alignedQuad.x0(),
-                    alignedQuad.y1()
-                )
             }
         }
 
@@ -122,17 +129,18 @@ private class AdvancedFontRender: FontRender {
     }
 
     private fun createFrontInfo(fullPathFont: String, fontHeight: Float): FontInfo {
-        val source = STBAdvancedFontRender::class.java.getResourceAsStream(fullPathFont)!!
+        println("create font by path: $fullPathFont with size: $fontHeight")
+        val source = FileInputStream(fullPathFont)
 
         val fontByteBuffer = ioResourceToByteBuffer(source, 1024)
         val pixels = BufferUtils.createByteBuffer(bufferSize.width * bufferSize.height)
         val fontInfo = STBTTFontinfo.malloc()
         STBTruetype.stbtt_InitFont(fontInfo, fontByteBuffer)
+        val charBuffer = STBTTPackedchar.malloc(charBufferLimit)
         STBTTPackContext.malloc().use { packContext ->
             STBTruetype.stbtt_PackBegin(
                 packContext, pixels, bufferSize.width, bufferSize.height, 0, 1, MemoryUtil.NULL
             )
-            val charBuffer = STBTTPackedchar.malloc(charBufferLimit)
             charBuffer.limit(charBufferLimit)
             charBuffer.position(firstUnicodeCharInRange)
 
@@ -170,7 +178,8 @@ private class AdvancedFontRender: FontRender {
         return FontInfo(
             textureId = textureId,
             lineHeight = lineHeight,
-            fontHeight = fontHeight
+            fontHeight = fontHeight,
+            charBuffer = charBuffer
         )
     }
 

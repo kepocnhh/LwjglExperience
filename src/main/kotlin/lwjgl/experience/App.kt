@@ -6,9 +6,11 @@ import lwjgl.util.glfw.key.KeyStatus
 import lwjgl.util.glfw.key.KeyType
 import lwjgl.util.glfw.key.toKeyStatusOrNull
 import lwjgl.util.glfw.key.toKeyType
+import lwjgl.util.resource.ResourceProvider
 import lwjgl.window.closeWindow
 import lwjgl.window.loopWindow
 import org.lwjgl.Version
+import java.io.File
 
 private val defaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
 
@@ -60,33 +62,33 @@ private fun onRender(canvas: Canvas) {
     )
 
     canvas.drawText(
-        fullPathFont = "/font.poiret.ttf",
+        fullPathFont = ResourceProvider.getResourceAsFile(File.separator + "font.main.ttf").absolutePath,
         fontHeight = 24f,
         pointTopLeft = Point(50f, 50f),
         color = Color.BLUE,
-        text = "50x50 blue"
+        text = "poiret 24 50x50 blue"
     )
-    canvas.drawText(
-        fullPathFont = "/font.poiret.ttf",
-        fontHeight = 24f,
-        pointTopLeft = Point(100f, 100f),
-        color = Color.RED,
-        text = "100x100 red"
-    )
-    canvas.drawText(
-        fullPathFont = "/font.poiret.ttf",
-        fontHeight = 24f,
-        pointTopLeft = Point(2, 18),
-        color = Color.GREEN,
-        text = "2x18 green"
-    )
+//    canvas.drawText(
+//        fullPathFont = File("resources/font.main.ttf").absolutePath,
+//        fontHeight = 28f,
+//        pointTopLeft = Point(100f, 100f),
+//        color = Color.RED,
+//        text = "main 28 100x100 red"
+//    )
+//    canvas.drawText(
+//        fullPathFont = File("resources/font.main.ttf").absolutePath,
+//        fontHeight = 20f,
+//        pointTopLeft = Point(2, 18),
+//        color = Color.GREEN,
+//        text = "sfmono 20 2x18 green"
+//    )
 
     canvas.drawText(
-        fullPathFont = "/font.poiret.ttf",
-        fontHeight = 24f,
+        fullPathFont = ResourceProvider.getResourceAsFile(File.separator + "font.consolas.ttf").absolutePath,
+        fontHeight = 16f,
         pointTopLeft = Point(0, 0),
         color = Color.BLACK,
-        text = "0x0 black"
+        text = "consolas 16 0x0 black"
     )
 
     canvas.drawRectangle(
@@ -107,11 +109,11 @@ private fun onRender(canvas: Canvas) {
         size = Size(300, h/4)
     )
     canvas.drawText(
-        fullPathFont = "/font.poiret.ttf",
+        fullPathFont = ResourceProvider.getResourceAsFile(File.separator + "font.main.ttf").absolutePath,
         fontHeight = 24f,
         pointTopLeft = Point(0, 300),
         color = Color.BLACK,
-        text = "jqQбВГдДЁуУфФцЦщЩъЪ\ntest"
+        text = "jqQбВГдДЁуУфФцЦщЩъЪ\nmain 24 0x300 black"
     )
     canvas.drawRectangle(
         color = Color(1f, 0f, 1f),
@@ -119,13 +121,13 @@ private fun onRender(canvas: Canvas) {
         size = Size(300, h/2 + 1)
     )
 
-    canvas.drawText(
-        fullPathFont = "/font.poiret.ttf",
-        fontHeight = 24f,
-        pointTopLeft = Point(0, 300 + h*2),
-        color = Color.BLACK,
-        text = "!@#$%^&*()"
-    )
+//    canvas.drawText(
+//        fullPathFont = File("resources/font.main.ttf").absolutePath,
+//        fontHeight = 24f,
+//        pointTopLeft = Point(0, 300 + h*2),
+//        color = Color.BLACK,
+//        text = "!@#$%^&*()"
+//    )
     canvas.drawRectangle(
         color = Color.RED,
         pointTopLeft = Point(0, 300 + h*2),
