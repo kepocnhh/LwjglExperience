@@ -4,10 +4,7 @@ import lwjgl.canvas.Canvas
 import lwjgl.entity.*
 import lwjgl.util.glfw.glfwGetWindowSize
 import lwjgl.util.glfw.key.glfwKeyCallback
-import lwjgl.util.glfw.opengl.glColorOf
-import lwjgl.util.glfw.opengl.glOrtho
-import lwjgl.util.glfw.opengl.glTransaction
-import lwjgl.util.glfw.opengl.glVertexOf
+import lwjgl.util.glfw.opengl.*
 import lwjgl.util.glfw.primitive.toGLFWInt
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
 import org.lwjgl.glfw.GLFW
@@ -35,15 +32,12 @@ fun createWindow(
     height: Int,
     title: String,
     monitorIdSupplier: () -> Long
-): Pair<Long, Long> {
+): Long {
     println("create window | start")
     GLFWErrorCallback.createPrint(errorPrintStream).set()
     if(!GLFW.glfwInit()) throw IllegalStateException("Unable to initialize GLFW")
     println("create window | init")
     GLFW.glfwDefaultWindowHints()
-
-//    GLFW.glfwWindowHint(GLFW.GLFW_STENCIL_BITS, 4)
-//    GLFW.glfwWindowHint(GLFW.GLFW_SAMPLES, 4)
 
     GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, isVisible.toGLFWInt())
     GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, isResizable.toGLFWInt())
@@ -58,6 +52,7 @@ fun createWindow(
     println("create window | start: $windowId")
     val monitorId = monitorIdSupplier()
     if(monitorId == MemoryUtil.NULL) throw IllegalStateException("Failed to create the GLFW window")
+    println("create window | window id: $windowId monitor id: $monitorId")
     GLFW.glfwGetVideoMode(monitorId)?.apply {
         GLFW.glfwSetWindowPos(
             windowId,
@@ -66,13 +61,24 @@ fun createWindow(
         )
     }
     GLFW.glfwMakeContextCurrent(windowId)
+    GL.createCapabilities()
+    val glVendor = GL11.glGetString(GL11.GL_VENDOR)
+    val glRenderer = GL11.glGetString(GL11.GL_RENDERER)
+    val glVersion = GL11.glGetString(GL11.GL_VERSION)
+    println("""
+        create window: $windowId | create capabilities
+            gl vendor: $glVendor
+            gl renderer: $glRenderer
+            gl version: $glVersion
+    """.trimIndent())
+
     GLFW.glfwSwapInterval(1)
     GLFW.glfwShowWindow(windowId)
     println("create window | show: $windowId")
     GLFW.glfwSetKeyCallback(windowId, glfwKeyCallback(onKeyCallback))
     windows[windowId] = WindowStatus.CREATED
     println("create window | finish: $windowId")
-    return windowId to monitorId
+    return windowId
 }
 
 fun closeWindow(windowId: Long) {
@@ -128,49 +134,36 @@ private fun onPreRender(windowId: Long) {
 }
 
 private fun onPostRender(windowId: Long) {
-//    GL11.glDisable(GL11.GL_BLEND)
     GLFW.glfwSwapBuffers(windowId)
 }
 
-fun loopWindow(windowId: Long, monitorId: Long, onRender: (Canvas) -> Unit) {
+fun loopWindow(
+    windowId: Long,
+    onPreLoop: () -> Unit,
+    onPostLoop: () -> Unit,
+    onRender: (Canvas) -> Unit
+) {
     println("loop window: $windowId")
     when(windows[windowId]) {
         WindowStatus.LOOPED -> throw IllegalStateException("Window ($windowId) already looped")
         WindowStatus.CREATED -> Unit
         else -> throw IllegalStateException("Window ($windowId) must be created")
     }
-    GLFW.glfwMakeContextCurrent(windowId)
-    GL.createCapabilities()
+
     GLFW.glfwSwapInterval(1)
-    GL11.glClearColor(1.0f, 1.0f, 1.0f, 1.0f)
+    glClearColor(Color.BLACK)
     windows[windowId] = WindowStatus.LOOPED
-//    GL11.glEnable(GL11.GL_BLEND)
-//    GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA)
-//    GL11.glEnable(GL11.GL_TEXTURE_2D)
-//    val fullPathFont = "/font.consolas.ttf"
-//    val fullPathFont = "/font.sfmono.ttf"
-//    val fullPathFont = "/font.roboto.ttf"
-    val fullPathFont = "/font.poiret.ttf"
-//    val fullPathFont = "/font.main.ttf"
-    val canvas = WindowCanvas(
-        windowId,
-//        fontRender = STBFontRender(
-//        fontRender = STBAdvancedFontRender(
-//            fullPathFont = fullPathFont,
-//            fontHeight = 48f
-//        )
-        fontRender = fontRender()
-    )
+
+    val canvas = WindowCanvas(fontRender = fontRender())
+    onPreLoop()
     println("loop window: $windowId | start loop")
     while(!GLFW.glfwWindowShouldClose(windowId)) {
         onPreRender(windowId)
-//        GL11.glEnable(GL11.GL_BLEND)
-//        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA)
-//        GL11.glClearColor(1.0f, 1.0f, 1.0f, 1.0f)
         onRender(canvas)
         onPostRender(windowId)
     }
     println("loop window: $windowId | finish loop")
+    onPostLoop()
 }
 
 fun loopWindow(
@@ -182,9 +175,11 @@ fun loopWindow(
     isVisible: Boolean = true,
     isResizable: Boolean = false,
     monitorIdSupplier: () -> Long = GLFW::glfwGetPrimaryMonitor,
+    onPreLoop: () -> Unit,
+    onPostLoop: () -> Unit,
     onRender: (Canvas) -> Unit
 ) {
-    val (windowId, monitorId) = createWindow(
+    val windowId = createWindow(
         errorPrintStream,
         isVisible,
         isResizable,
@@ -194,12 +189,11 @@ fun loopWindow(
         title,
         monitorIdSupplier
     )
-    loopWindow(windowId, monitorId, onRender)
+    loopWindow(windowId, onPreLoop, onPostLoop, onRender)
     destroyWindow(windowId)
 }
 
 private class WindowCanvas(
-    private val windowId: Long,
     private val fontRender: FontRender
 ): Canvas {
     override fun drawLine(
@@ -207,14 +201,11 @@ private class WindowCanvas(
         point1: Point,
         point2: Point
     ) {
-        val windowSize = getWindowSize()
         GL11.glLineWidth(1.0f)
         glColorOf(color)
         glTransaction(GL11.GL_LINE_STRIP) {
             glVertexOf(point1)
             glVertexOf(point2)
-//            glVertexOf(point1.toWindowPoint(windowSize))
-//            glVertexOf(point2.toWindowPoint(windowSize))
         }
     }
 
@@ -223,13 +214,11 @@ private class WindowCanvas(
         pointTopLeft: Point,
         size: Size
     ) {
-        val windowSize = getWindowSize()
-//        val (x1, y1) = pointTopLeft.toWindowPoint(windowSize)
         val (x1, y1) = pointTopLeft
         val (x2, y2) = Point(
             x = pointTopLeft.x + size.width,
             y = pointTopLeft.y + size.height
-        )//.toWindowPoint(windowSize)
+        )
         glColorOf(color)
         glTransaction(GL11.GL_LINE_LOOP) {
             glVertexOf(x1, y1)
@@ -238,12 +227,6 @@ private class WindowCanvas(
             glVertexOf(x1, y2)
         }
     }
-
-//    override fun drawText(
-//        color: Color, pointTopLeft: Point, text: CharSequence
-//    ) {
-//        fontRender.drawText(color, pointTopLeft, text)
-//    }
 
     override fun drawText(
         fullPathFont: String,
@@ -254,14 +237,4 @@ private class WindowCanvas(
     ) {
         fontRender.drawText(fullPathFont, fontHeight, pointTopLeft, color, text)
     }
-
-//    private fun Point.toWindowPoint() = toWindowPoint(windowId)
-    private fun getWindowSize() = glfwGetWindowSize(windowId)
 }
-
-//private fun Point.toWindowPoint(windowId: Long) = toWindowPoint(glfwGetWindowSize(windowId))
-//private fun Point.toWindowPoint(size: Size) = toWindowPoint(size.width, size.height)
-//private fun Point.toWindowPoint(width: Int, height: Int) = Point(
-//    x = (x/width -0.5f)* 2,
-//    y = (y/height-0.5f)*-2
-//)

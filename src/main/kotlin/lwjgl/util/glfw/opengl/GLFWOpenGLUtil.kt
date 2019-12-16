@@ -32,6 +32,13 @@ fun glColorOf(color: Color) {
     glColorOf(color.red, color.green, color.blue, color.alpha)
 }
 
+fun glClearColor(red: Float, green: Float, blue: Float, alpha: Float) {
+    GL11.glClearColor(red, green, blue, alpha)
+}
+fun glClearColor(color: Color) {
+    glClearColor(color.red, color.green, color.blue, color.alpha)
+}
+
 fun glTexImage2D(
     textureTarget: Int,
     textureInternalFormat: Int,

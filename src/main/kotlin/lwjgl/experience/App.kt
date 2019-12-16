@@ -5,15 +5,30 @@ import lwjgl.entity.*
 import lwjgl.util.glfw.key.KeyStatus
 import lwjgl.util.glfw.key.KeyType
 import lwjgl.util.glfw.key.toKeyStatusOrNull
-import lwjgl.util.glfw.key.toKeyType
+import lwjgl.util.glfw.key.toKeyTypeOrNull
+import lwjgl.util.glfw.opengl.glClearColor
 import lwjgl.util.resource.ResourceProvider
 import lwjgl.window.closeWindow
 import lwjgl.window.loopWindow
 import org.lwjgl.Version
-import java.io.File
+import java.util.*
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.concurrent.thread
 
 private val defaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
-
+private val keysStatuses = mutableMapOf<KeyType, KeyStatus>().also { statuses ->
+    KeyType.values().forEach { keyType ->
+        statuses[keyType] = KeyStatus.RELEASE
+    }
+}
+private var timeLast = 0L
+private const val nanoInSecond = 1_000_000_000L
+private const val framesPerSecond = 60L
+private const val gameObjectPxPerSecond = 100
+private const val gameObjectAcceleration = gameObjectPxPerSecond.toDouble() / nanoInSecond
+private const val timeFrame = nanoInSecond.toDouble() / framesPerSecond
+private val isWindowShouldClose = AtomicBoolean(false)
 fun main() {
     println("Hello LWJGL " + Version.getVersion() + "!")
     Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
@@ -26,111 +41,162 @@ fun main() {
         }
         defaultExceptionHandler.uncaughtException(thread, throwable)
     }
+    thread {
+        while (!isWindowShouldClose.get()) {
+            val action = backgroundActions.poll()
+            if(action != null) {
+                thread {
+                    action()
+                }
+            }
+        }
+    }
     loopWindow(
         width = 640,
         height = 480,
-        title = "lwjgl.ui",
+        title = "lwjgl.experience",
         onKeyCallback = { windowId, key, _, action, _ ->
-            onKeyCallback(
-                windowId,
-                key.toKeyType(),
-                action.toKeyStatusOrNull() ?: throw IllegalStateException(
-                    "Action ($action) not supported"
+            val keyType = key.toKeyTypeOrNull()
+            val keyStatus = action.toKeyStatusOrNull()
+            if(keyType != null && keyStatus != null) {
+                keysStatuses[keyType] = keyStatus
+                onKeyCallback(
+                    windowId,
+                    keyType,
+                    keyStatus
                 )
-            )
+            }
+        },
+        onPreLoop = {
+            glClearColor(Color.BLACK)
+            println("""
+                gameObjectAcceleration: $gameObjectAcceleration
+                timeFrame: $timeFrame
+            """.trimIndent())
+            timeLast = System.nanoTime()
+        },
+        onPostLoop = {
+            isWindowShouldClose.set(true)
         },
         onRender = ::onRender
     )
 }
 
+private class GameObject(
+    var position: Point
+)
+private val gameObject = GameObject(position = Point(x = 0, y = 0))
+
+private val backgroundActions: Queue<() -> Unit> = LinkedBlockingQueue()
+fun postBackground(action: () -> Unit) {
+    backgroundActions.add(action)
+}
+private fun moveGameObject(mapper: (Point, Double) -> Point) {
+    val position = gameObject.position
+    val timeLastInternal = timeLast
+    while (timeLastInternal == timeLast) {
+        val timeDifference = System.nanoTime() - timeLastInternal
+        val delta = timeDifference * gameObjectAcceleration
+        gameObject.position = mapper(position, delta)
+    }
+}
 private fun onKeyCallback(windowId: Long, keyType: KeyType, keyStatus: KeyStatus) {
     println("key = $keyType, action = $keyStatus")
-    if(keyType == KeyType.ESCAPE && keyStatus == KeyStatus.RELEASE) {
-        closeWindow(windowId)
+    when(keyType) {
+        KeyType.ESCAPE -> {
+            when(keyStatus) {
+                KeyStatus.RELEASE -> {
+                    closeWindow(windowId)
+                    isWindowShouldClose.set(true)
+                }
+                else -> Unit//ignored
+            }
+        }
+        KeyType.A -> {
+            when(keyStatus) {
+                KeyStatus.PRESS -> {
+                    postBackground {
+                        while (keysStatuses[keyType] != KeyStatus.RELEASE) {
+                            if(keysStatuses[KeyType.D] != KeyStatus.RELEASE) continue
+                            moveGameObject { oldPosition, delta ->
+                                Point(
+                                    x = oldPosition.x - delta.toFloat(),
+                                    y = gameObject.position.y
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        KeyType.D -> {
+            when(keyStatus) {
+                KeyStatus.PRESS -> {
+                    postBackground {
+                        while (keysStatuses[keyType] != KeyStatus.RELEASE) {
+                            if(keysStatuses[KeyType.A] != KeyStatus.RELEASE) continue
+                            moveGameObject { oldPosition, delta ->
+                                Point(
+                                    x = oldPosition.x + delta.toFloat(),
+                                    y = gameObject.position.y
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        KeyType.S -> {
+            when(keyStatus) {
+                KeyStatus.PRESS -> {
+                    postBackground {
+                        while (keysStatuses[keyType] != KeyStatus.RELEASE) {
+                            if(keysStatuses[KeyType.W] != KeyStatus.RELEASE) continue
+                            moveGameObject { oldPosition, delta ->
+                                Point(
+                                    x = gameObject.position.x,
+                                    y = oldPosition.y + delta.toFloat()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        KeyType.W -> {
+            when(keyStatus) {
+                KeyStatus.PRESS -> {
+                    postBackground {
+                        while (keysStatuses[keyType] != KeyStatus.RELEASE) {
+                            if(keysStatuses[KeyType.S] != KeyStatus.RELEASE) continue
+                            moveGameObject { oldPosition, delta ->
+                                Point(
+                                    x = gameObject.position.x,
+                                    y = oldPosition.y - delta.toFloat()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 private fun onRender(canvas: Canvas) {
-    canvas.drawLine(
-        color = Color.BLACK,
-        point1 = Point(25f, 25f),
-        point2 = Point(125f, 125f)
-    )
+//    while (System.nanoTime() - timeLast < timeFrame);
+    timeLast = System.nanoTime()
+
     canvas.drawRectangle(
-        color = Color.RED,
-        pointTopLeft = Point(50f, 50f),
-        size = Size(50, 50)
+        color = Color.GREEN,
+        pointTopLeft = gameObject.position,
+        size = Size(width = 24, height = 24)
     )
 
     canvas.drawText(
         fullPathFont = ResourceProvider.getResourceAsFile("font.main.ttf").absolutePath,
-        fontHeight = 24f,
-        pointTopLeft = Point(50f, 50f),
-        color = Color.BLUE,
-        text = "poiret 24 50x50 blue"
-    )
-//    canvas.drawText(
-//        fullPathFont = File("resources/font.main.ttf").absolutePath,
-//        fontHeight = 28f,
-//        pointTopLeft = Point(100f, 100f),
-//        color = Color.RED,
-//        text = "main 28 100x100 red"
-//    )
-//    canvas.drawText(
-//        fullPathFont = File("resources/font.main.ttf").absolutePath,
-//        fontHeight = 20f,
-//        pointTopLeft = Point(2, 18),
-//        color = Color.GREEN,
-//        text = "sfmono 20 2x18 green"
-//    )
-
-//    canvas.drawText(
-//        fullPathFont = ResourceProvider.getResourceAsFile(File.separator + "font.consolas.ttf").absolutePath,
-//        fontHeight = 16f,
-//        pointTopLeft = Point(0, 0),
-//        color = Color.BLACK,
-//        text = "consolas 16 0x0 black"
-//    )
-
-    canvas.drawRectangle(
-        color = Color(1f, 0f, 1f),
-        pointTopLeft = Point(50f, 50f),
-        size = Size(150, 50)
-    )
-
-    val h = 48
-    canvas.drawRectangle(
-        color = Color(0f, 1f, 1f),
-        pointTopLeft = Point(0, 300),
-        size = Size(300, h+1)
-    )
-    canvas.drawRectangle(
-        color = Color.RED,
-        pointTopLeft = Point(0, 300),
-        size = Size(300, h/4)
-    )
-//    canvas.drawText(
-//        fullPathFont = ResourceProvider.getResourceAsFile(File.separator + "font.main.ttf").absolutePath,
-//        fontHeight = 24f,
-//        pointTopLeft = Point(0, 300),
-//        color = Color.BLACK,
-//        text = "jqQбВГдДЁуУфФцЦщЩъЪ\nmain 24 0x300 black"
-//    )
-    canvas.drawRectangle(
-        color = Color(1f, 0f, 1f),
-        pointTopLeft = Point(0, 300),
-        size = Size(300, h/2 + 1)
-    )
-
-//    canvas.drawText(
-//        fullPathFont = File("resources/font.main.ttf").absolutePath,
-//        fontHeight = 24f,
-//        pointTopLeft = Point(0, 300 + h*2),
-//        color = Color.BLACK,
-//        text = "!@#$%^&*()"
-//    )
-    canvas.drawRectangle(
-        color = Color.RED,
-        pointTopLeft = Point(0, 300 + h*2),
-        size = Size(300, h)
+        color = Color.GREEN,
+        pointTopLeft = Point(300, 300),
+        text = "${gameObject.position}",
+        fontHeight = 16f
     )
 }

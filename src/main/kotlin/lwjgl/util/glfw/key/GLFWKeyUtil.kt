@@ -1,6 +1,6 @@
 package lwjgl.util.glfw.key
 
-import org.lwjgl.glfw.GLFW.*
+import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFWKeyCallback
 
 fun glfwKeyCallback(
@@ -13,14 +13,21 @@ fun glfwKeyCallback(
 
 
 enum class KeyType {
+    A,
+    D,
+    S,
+    W,
     ESCAPE,
-    UNKNOWN
 }
 
-fun Int.toKeyType(): KeyType {
+fun Int.toKeyTypeOrNull(): KeyType? {
     return when(this) {
-        GLFW_KEY_ESCAPE -> KeyType.ESCAPE
-        else -> KeyType.UNKNOWN
+        GLFW.GLFW_KEY_ESCAPE -> KeyType.ESCAPE
+        GLFW.GLFW_KEY_A -> KeyType.A
+        GLFW.GLFW_KEY_D -> KeyType.D
+        GLFW.GLFW_KEY_S -> KeyType.S
+        GLFW.GLFW_KEY_W -> KeyType.W
+        else -> null
     }
 }
 
@@ -32,9 +39,9 @@ enum class KeyStatus {
 
 fun Int.toKeyStatusOrNull(): KeyStatus? {
     return when(this) {
-        GLFW_RELEASE -> KeyStatus.RELEASE
-        GLFW_PRESS -> KeyStatus.PRESS
-        GLFW_REPEAT -> KeyStatus.REPEAT
+        GLFW.GLFW_RELEASE -> KeyStatus.RELEASE
+        GLFW.GLFW_PRESS -> KeyStatus.PRESS
+        GLFW.GLFW_REPEAT -> KeyStatus.REPEAT
         else -> null
     }
 }
