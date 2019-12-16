@@ -62,7 +62,7 @@ private fun onRender(canvas: Canvas) {
     )
 
     canvas.drawText(
-        fullPathFont = ResourceProvider.getResourceAsFile(File.separator + "font.main.ttf").absolutePath,
+        fullPathFont = ResourceProvider.getResourceAsFile("font.main.ttf").absolutePath,
         fontHeight = 24f,
         pointTopLeft = Point(50f, 50f),
         color = Color.BLUE,
@@ -83,13 +83,13 @@ private fun onRender(canvas: Canvas) {
 //        text = "sfmono 20 2x18 green"
 //    )
 
-    canvas.drawText(
-        fullPathFont = ResourceProvider.getResourceAsFile(File.separator + "font.consolas.ttf").absolutePath,
-        fontHeight = 16f,
-        pointTopLeft = Point(0, 0),
-        color = Color.BLACK,
-        text = "consolas 16 0x0 black"
-    )
+//    canvas.drawText(
+//        fullPathFont = ResourceProvider.getResourceAsFile(File.separator + "font.consolas.ttf").absolutePath,
+//        fontHeight = 16f,
+//        pointTopLeft = Point(0, 0),
+//        color = Color.BLACK,
+//        text = "consolas 16 0x0 black"
+//    )
 
     canvas.drawRectangle(
         color = Color(1f, 0f, 1f),
@@ -108,13 +108,13 @@ private fun onRender(canvas: Canvas) {
         pointTopLeft = Point(0, 300),
         size = Size(300, h/4)
     )
-    canvas.drawText(
-        fullPathFont = ResourceProvider.getResourceAsFile(File.separator + "font.main.ttf").absolutePath,
-        fontHeight = 24f,
-        pointTopLeft = Point(0, 300),
-        color = Color.BLACK,
-        text = "jqQбВГдДЁуУфФцЦщЩъЪ\nmain 24 0x300 black"
-    )
+//    canvas.drawText(
+//        fullPathFont = ResourceProvider.getResourceAsFile(File.separator + "font.main.ttf").absolutePath,
+//        fontHeight = 24f,
+//        pointTopLeft = Point(0, 300),
+//        color = Color.BLACK,
+//        text = "jqQбВГдДЁуУфФцЦщЩъЪ\nmain 24 0x300 black"
+//    )
     canvas.drawRectangle(
         color = Color(1f, 0f, 1f),
         pointTopLeft = Point(0, 300),
