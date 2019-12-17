@@ -15,6 +15,7 @@ import java.util.*
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
+import kotlin.math.roundToInt
 
 private val defaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
 private val keysStatuses = mutableMapOf<KeyType, KeyStatus>().also { statuses ->
@@ -25,10 +26,64 @@ private val keysStatuses = mutableMapOf<KeyType, KeyStatus>().also { statuses ->
 private var timeLast = 0L
 private const val nanoInSecond = 1_000_000_000L
 private const val framesPerSecond = 60L
+//private const val framesPerSecond = 30L
 private const val gameObjectPxPerSecond = 100
 private const val gameObjectAcceleration = gameObjectPxPerSecond.toDouble() / nanoInSecond
 private const val timeFrame = nanoInSecond.toDouble() / framesPerSecond
-private val isWindowShouldClose = AtomicBoolean(false)
+private fun onKeyCallback() {
+    keysStatuses.forEach { (keyType, keyStatus) ->
+        when(keyType) {
+            KeyType.A -> {
+                when(keyStatus) {
+                    KeyStatus.PRESS, KeyStatus.REPEAT -> {
+                        val timeDifference = System.nanoTime() - timeLast
+                        val delta = timeDifference * gameObjectAcceleration
+                        gameObject.position = Point(
+                            x = gameObject.position.x - delta.toFloat(),
+                            y = gameObject.position.y
+                        )
+                    }
+                }
+            }
+            KeyType.D -> {
+                when(keyStatus) {
+                    KeyStatus.PRESS, KeyStatus.REPEAT -> {
+                        val timeDifference = System.nanoTime() - timeLast
+                        val delta = timeDifference * gameObjectAcceleration
+                        gameObject.position = Point(
+                            x = gameObject.position.x + delta.toFloat(),
+                            y = gameObject.position.y
+                        )
+                    }
+                }
+            }
+            KeyType.S -> {
+                when(keyStatus) {
+                    KeyStatus.PRESS, KeyStatus.REPEAT -> {
+                        val timeDifference = System.nanoTime() - timeLast
+                        val delta = timeDifference * gameObjectAcceleration
+                        gameObject.position = Point(
+                            x = gameObject.position.x,
+                            y = gameObject.position.y + delta.toFloat()
+                        )
+                    }
+                }
+            }
+            KeyType.W -> {
+                when(keyStatus) {
+                    KeyStatus.PRESS, KeyStatus.REPEAT -> {
+                        val timeDifference = System.nanoTime() - timeLast
+                        val delta = timeDifference * gameObjectAcceleration
+                        gameObject.position = Point(
+                            x = gameObject.position.x,
+                            y = gameObject.position.y - delta.toFloat()
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 fun main() {
     println("Hello LWJGL " + Version.getVersion() + "!")
     Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
@@ -40,16 +95,6 @@ fun main() {
             )
         }
         defaultExceptionHandler.uncaughtException(thread, throwable)
-    }
-    thread {
-        while (!isWindowShouldClose.get()) {
-            val action = backgroundActions.poll()
-            if(action != null) {
-                thread {
-                    action()
-                }
-            }
-        }
     }
     loopWindow(
         width = 640,
@@ -76,7 +121,7 @@ fun main() {
             timeLast = System.nanoTime()
         },
         onPostLoop = {
-            isWindowShouldClose.set(true)
+            //todo
         },
         onRender = ::onRender
     )
@@ -87,19 +132,6 @@ private class GameObject(
 )
 private val gameObject = GameObject(position = Point(x = 0, y = 0))
 
-private val backgroundActions: Queue<() -> Unit> = LinkedBlockingQueue()
-fun postBackground(action: () -> Unit) {
-    backgroundActions.add(action)
-}
-private fun moveGameObject(mapper: (Point, Double) -> Point) {
-    val position = gameObject.position
-    val timeLastInternal = timeLast
-    while (timeLastInternal == timeLast) {
-        val timeDifference = System.nanoTime() - timeLastInternal
-        val delta = timeDifference * gameObjectAcceleration
-        gameObject.position = mapper(position, delta)
-    }
-}
 private fun onKeyCallback(windowId: Long, keyType: KeyType, keyStatus: KeyStatus) {
     println("key = $keyType, action = $keyStatus")
     when(keyType) {
@@ -107,84 +139,35 @@ private fun onKeyCallback(windowId: Long, keyType: KeyType, keyStatus: KeyStatus
             when(keyStatus) {
                 KeyStatus.RELEASE -> {
                     closeWindow(windowId)
-                    isWindowShouldClose.set(true)
                 }
                 else -> Unit//ignored
             }
         }
-        KeyType.A -> {
-            when(keyStatus) {
-                KeyStatus.PRESS -> {
-                    postBackground {
-                        while (keysStatuses[keyType] != KeyStatus.RELEASE) {
-                            if(keysStatuses[KeyType.D] != KeyStatus.RELEASE) continue
-                            moveGameObject { oldPosition, delta ->
-                                Point(
-                                    x = oldPosition.x - delta.toFloat(),
-                                    y = gameObject.position.y
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        KeyType.D -> {
-            when(keyStatus) {
-                KeyStatus.PRESS -> {
-                    postBackground {
-                        while (keysStatuses[keyType] != KeyStatus.RELEASE) {
-                            if(keysStatuses[KeyType.A] != KeyStatus.RELEASE) continue
-                            moveGameObject { oldPosition, delta ->
-                                Point(
-                                    x = oldPosition.x + delta.toFloat(),
-                                    y = gameObject.position.y
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        KeyType.S -> {
-            when(keyStatus) {
-                KeyStatus.PRESS -> {
-                    postBackground {
-                        while (keysStatuses[keyType] != KeyStatus.RELEASE) {
-                            if(keysStatuses[KeyType.W] != KeyStatus.RELEASE) continue
-                            moveGameObject { oldPosition, delta ->
-                                Point(
-                                    x = gameObject.position.x,
-                                    y = oldPosition.y + delta.toFloat()
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        KeyType.W -> {
-            when(keyStatus) {
-                KeyStatus.PRESS -> {
-                    postBackground {
-                        while (keysStatuses[keyType] != KeyStatus.RELEASE) {
-                            if(keysStatuses[KeyType.S] != KeyStatus.RELEASE) continue
-                            moveGameObject { oldPosition, delta ->
-                                Point(
-                                    x = gameObject.position.x,
-                                    y = oldPosition.y - delta.toFloat()
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }
+
+private val fullPathFontMain = ResourceProvider.getResourceAsFile("font.main.ttf").absolutePath
+private fun Canvas.drawText(
+    fontHeight: Float,
+    pointTopLeft: Point,
+    color: Color,
+    text: CharSequence
+) {
+    drawText(
+        fullPathFont = fullPathFontMain,
+        color = color,
+        pointTopLeft = pointTopLeft,
+        text = text,
+        fontHeight = fontHeight
+    )
+}
 private fun onRender(canvas: Canvas) {
-//    while (System.nanoTime() - timeLast < timeFrame);
-    timeLast = System.nanoTime()
+    while (System.nanoTime() - timeLast < timeFrame);
+
+    onKeyCallback()
+    val timeNow = System.nanoTime()
+    val fps = nanoInSecond.toDouble() / (timeNow - timeLast)
+    timeLast = timeNow
 
     canvas.drawRectangle(
         color = Color.GREEN,
@@ -193,10 +176,16 @@ private fun onRender(canvas: Canvas) {
     )
 
     canvas.drawText(
-        fullPathFont = ResourceProvider.getResourceAsFile("font.main.ttf").absolutePath,
         color = Color.GREEN,
         pointTopLeft = Point(300, 300),
         text = "${gameObject.position}",
+        fontHeight = 16f
+    )
+
+    canvas.drawText(
+        color = Color.GREEN,
+        pointTopLeft = Point(0, 0),
+        text = "${(fps*100).toInt().toDouble()/100}",
         fontHeight = 16f
     )
 }
