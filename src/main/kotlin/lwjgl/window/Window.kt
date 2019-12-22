@@ -166,7 +166,7 @@ fun loopWindow(
     windowId: Long,
     onPreLoop: () -> Unit,
     onPostLoop: () -> Unit,
-    onRender: (Canvas) -> Unit
+    onRender: (Long, Canvas) -> Unit
 ) {
     println("loop window: $windowId")
     when(windows[windowId]) {
@@ -183,7 +183,7 @@ fun loopWindow(
     println("loop window: $windowId | start loop")
     while(!GLFW.glfwWindowShouldClose(windowId)) {
         onPreRender(windowId)
-        onRender(canvas)
+        onRender(windowId, canvas)
         onPostRender(windowId)
     }
     println("loop window: $windowId | finish loop")
@@ -200,7 +200,7 @@ fun loopWindow(
     monitorIdSupplier: () -> Long = GLFW::glfwGetPrimaryMonitor,
     onPreLoop: () -> Unit,
     onPostLoop: () -> Unit,
-    onRender: (Canvas) -> Unit
+    onRender: (Long, Canvas) -> Unit
 ) {
     val windowId = createWindow(
         errorPrintStream,

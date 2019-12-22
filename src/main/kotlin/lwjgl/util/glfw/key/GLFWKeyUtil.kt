@@ -18,10 +18,12 @@ enum class KeyType {
     S,
     W,
     ESCAPE,
+    ENTER,
 }
 
 fun Int.toKeyTypeOrNull(): KeyType? {
     return when(this) {
+        GLFW.GLFW_KEY_ENTER -> KeyType.ENTER
         GLFW.GLFW_KEY_ESCAPE -> KeyType.ESCAPE
         GLFW.GLFW_KEY_A -> KeyType.A
         GLFW.GLFW_KEY_D -> KeyType.D
