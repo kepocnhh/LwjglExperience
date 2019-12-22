@@ -8,6 +8,7 @@ import lwjgl.util.glfw.key.toKeyStatusOrNull
 import lwjgl.util.glfw.key.toKeyTypeOrNull
 import lwjgl.util.glfw.opengl.glClearColor
 import lwjgl.util.resource.ResourceProvider
+import lwjgl.window.WindowSize
 import lwjgl.window.closeWindow
 import lwjgl.window.loopWindow
 import org.lwjgl.Version
@@ -97,8 +98,8 @@ fun main() {
         defaultExceptionHandler.uncaughtException(thread, throwable)
     }
     loopWindow(
-        width = 640,
-        height = 480,
+        windowSize = WindowSize.Exact(size = Size(width = 640, height = 480)),
+//        windowSize = WindowSize.FullScreen,// todo windows cmd issue + fullscreen toggle issue
         title = "lwjgl.experience",
         onKeyCallback = { windowId, key, _, action, _ ->
             val keyType = key.toKeyTypeOrNull()

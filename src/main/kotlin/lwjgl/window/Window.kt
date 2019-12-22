@@ -9,6 +9,7 @@ import lwjgl.util.glfw.primitive.toGLFWInt
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFWErrorCallback
+import org.lwjgl.glfw.GLFWVulkan
 import org.lwjgl.opengl.GL
 import org.lwjgl.opengl.GL11
 import org.lwjgl.system.MemoryUtil
@@ -23,57 +24,81 @@ private enum class WindowStatus {
     DESTROYED
 }
 
+sealed class WindowSize {
+    object FullScreen: WindowSize()
+    class Exact(val size: Size): WindowSize()
+}
+
 fun createWindow(
     errorPrintStream: PrintStream,
     isVisible: Boolean,
     isResizable: Boolean,
     onKeyCallback: (Long, Int, Int, Int, Int) -> Unit,
-    width: Int,
-    height: Int,
+    windowSize: WindowSize,
     title: String,
     monitorIdSupplier: () -> Long
 ): Long {
     println("create window | start")
     GLFWErrorCallback.createPrint(errorPrintStream).set()
-    if(!GLFW.glfwInit()) throw IllegalStateException("Unable to initialize GLFW")
+    if(!GLFW.glfwInit()) error("Unable to initialize GLFW")
     println("create window | init")
     GLFW.glfwDefaultWindowHints()
 
     GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, isVisible.toGLFWInt())
     GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, isResizable.toGLFWInt())
-    val windowId = GLFW.glfwCreateWindow(
-        width,
-        height,
-        title,
-        MemoryUtil.NULL,
-        MemoryUtil.NULL
-    )
-    if(windowId == MemoryUtil.NULL) throw IllegalStateException("Failed to create the GLFW window")
-    println("create window | start: $windowId")
+
     val monitorId = monitorIdSupplier()
-    if(monitorId == MemoryUtil.NULL) throw IllegalStateException("Failed to create the GLFW window")
-    println("create window | window id: $windowId monitor id: $monitorId")
-    GLFW.glfwGetVideoMode(monitorId)?.apply {
-        GLFW.glfwSetWindowPos(
-            windowId,
-            (width() - width) / 2,
-            (height()- height)/ 2
-        )
+    if(monitorId == MemoryUtil.NULL) error("Failed to create the GLFW window")
+    println("create window | monitor id: $monitorId")
+    val videoMode = GLFW.glfwGetVideoMode(monitorId) ?: error("Failed to get video mode by monitor: $monitorId")
+
+    val windowId: Long
+    when(windowSize) {
+        WindowSize.FullScreen -> {
+            windowId = GLFW.glfwCreateWindow(
+                videoMode.width(),
+                videoMode.height(),
+                title,
+                monitorId,
+                MemoryUtil.NULL
+            )
+        }
+        is WindowSize.Exact -> {
+            windowId = GLFW.glfwCreateWindow(
+                windowSize.size.width,
+                windowSize.size.height,
+                title,
+                MemoryUtil.NULL,
+                MemoryUtil.NULL
+            )
+
+            GLFW.glfwSetWindowPos(
+                windowId,
+                (videoMode.width() - windowSize.size.width) / 2,
+                (videoMode.height()- windowSize.size.height)/ 2
+            )
+        }
     }
+    if(windowId == MemoryUtil.NULL) error("Failed to create the GLFW window")
+    println("create window | start: $windowId monitor id: $monitorId")
+
     GLFW.glfwMakeContextCurrent(windowId)
     GL.createCapabilities()
     val glVendor = GL11.glGetString(GL11.GL_VENDOR)
     val glRenderer = GL11.glGetString(GL11.GL_RENDERER)
     val glVersion = GL11.glGetString(GL11.GL_VERSION)
+    val glfwVersion = GLFW.glfwGetVersionString()
+    val isGLFWVulkanSupported = GLFWVulkan.glfwVulkanSupported()
     println("""
         create window: $windowId | create capabilities
             gl vendor: $glVendor
             gl renderer: $glRenderer
             gl version: $glVersion
+            glfw version: $glfwVersion
+            is GLFW Vulkan supported: $isGLFWVulkanSupported
     """.trimIndent())
 
     GLFW.glfwSwapInterval(1)
-    GLFW.glfwShowWindow(windowId)
     println("create window | show: $windowId")
     GLFW.glfwSetKeyCallback(windowId, glfwKeyCallback(onKeyCallback))
     windows[windowId] = WindowStatus.CREATED
@@ -145,12 +170,11 @@ fun loopWindow(
 ) {
     println("loop window: $windowId")
     when(windows[windowId]) {
-        WindowStatus.LOOPED -> throw IllegalStateException("Window ($windowId) already looped")
+        WindowStatus.LOOPED -> error("Window ($windowId) already looped")
         WindowStatus.CREATED -> Unit
-        else -> throw IllegalStateException("Window ($windowId) must be created")
+        else -> error("Window ($windowId) must be created")
     }
 
-    GLFW.glfwSwapInterval(1)
     glClearColor(Color.BLACK)
     windows[windowId] = WindowStatus.LOOPED
 
@@ -167,8 +191,7 @@ fun loopWindow(
 }
 
 fun loopWindow(
-    width: Int,
-    height: Int,
+    windowSize: WindowSize,
     title: String,
     onKeyCallback: (Long, Int, Int, Int, Int) -> Unit,
     errorPrintStream: PrintStream = System.err,
@@ -184,11 +207,11 @@ fun loopWindow(
         isVisible,
         isResizable,
         onKeyCallback,
-        width,
-        height,
+        windowSize,
         title,
         monitorIdSupplier
     )
+    GLFW.glfwShowWindow(windowId)
     loopWindow(windowId, onPreLoop, onPostLoop, onRender)
     destroyWindow(windowId)
 }
