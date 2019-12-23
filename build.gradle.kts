@@ -12,6 +12,7 @@ buildscript {
 allprojects {
     repositories {
         jcenter()
+//        maven { setUrl("https://oss.sonatype.org/content/repositories/snapshots/") }
     }
 }
 
@@ -51,6 +52,7 @@ dependencies {
             "lwjgl",
             "lwjgl-glfw",
             "lwjgl-opengl",
+//            "lwjgl-vulkan",
             "lwjgl-stb"
         ).forEach { name ->
             implementation("$group:$name")

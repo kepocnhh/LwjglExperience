@@ -88,14 +88,13 @@ fun createWindow(
     val glRenderer = GL11.glGetString(GL11.GL_RENDERER)
     val glVersion = GL11.glGetString(GL11.GL_VERSION)
     val glfwVersion = GLFW.glfwGetVersionString()
-    val isGLFWVulkanSupported = GLFWVulkan.glfwVulkanSupported()
+//    val isGLFWVulkanSupported = GLFWVulkan.glfwVulkanSupported()// required org.lwjgl:lwjgl-vulkan https://github.com/LWJGL/lwjgl3/issues/502
     println("""
         create window: $windowId | create capabilities
             gl vendor: $glVendor
             gl renderer: $glRenderer
             gl version: $glVersion
             glfw version: $glfwVersion
-            is GLFW Vulkan supported: $isGLFWVulkanSupported
     """.trimIndent())
 
     GLFW.glfwSwapInterval(1)
