@@ -17,8 +17,8 @@ import org.lwjgl.Version
 private val defaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
 
 private const val nanoInSecond = 1_000_000_000L
-private const val framesPerSecond = 120
-//private const val framesPerSecond = 60
+//private const val framesPerSecond = 120
+private const val framesPerSecond = 60
 //private const val framesPerSecond = 30
 private const val gameObjectPxPerSecond = 100
 private const val gameObjectAcceleration = gameObjectPxPerSecond.toDouble() / nanoInSecond
@@ -55,6 +55,8 @@ private object SimpleEngineLogic: EngineLogic {
 
     override fun onUpdateState(engineInputState: EngineInputState, engineProperty: EngineProperty) {
         val printableKeys = engineInputState.keyboard.printableKeys
+//        val sleepTime = 1_000L.toDouble() / 60
+//        Thread.sleep((sleepTime).toLong())
         printableKeys.forEach { (key, status) ->
             when(key) {
                 PrintableKey.A -> {
@@ -80,7 +82,7 @@ private object SimpleEngineLogic: EngineLogic {
                                 KeyStatus.PRESS, KeyStatus.REPEAT -> return@forEach
                                 else -> Unit//ignored
                             }
-                            val timeDifference = System.nanoTime() - engineProperty.timeLast
+                            val timeDifference = engineProperty.timeNow - engineProperty.timeLast
                             val delta = timeDifference * gameObjectAcceleration
                             gameObject.position = Point(
                                 x = gameObject.position.x + delta.toFloat(),
@@ -96,7 +98,7 @@ private object SimpleEngineLogic: EngineLogic {
                                 KeyStatus.PRESS, KeyStatus.REPEAT -> return@forEach
                                 else -> Unit//ignored
                             }
-                            val timeDifference = System.nanoTime() - engineProperty.timeLast
+                            val timeDifference = engineProperty.timeNow - engineProperty.timeLast
                             val delta = timeDifference * gameObjectAcceleration
                             gameObject.position = Point(
                                 x = gameObject.position.x,
@@ -112,7 +114,7 @@ private object SimpleEngineLogic: EngineLogic {
                                 KeyStatus.PRESS, KeyStatus.REPEAT -> return@forEach
                                 else -> Unit//ignored
                             }
-                            val timeDifference = System.nanoTime() - engineProperty.timeLast
+                            val timeDifference = engineProperty.timeNow - engineProperty.timeLast
                             val delta = timeDifference * gameObjectAcceleration
                             gameObject.position = Point(
                                 x = gameObject.position.x,
@@ -167,8 +169,8 @@ fun main() {
         }
         defaultExceptionHandler.uncaughtException(thread, throwable)
     }
-//    Engine.run(SimpleEngineLogic)
-    Engine.run(PingpongEngineLogic)
+    Engine.run(SimpleEngineLogic)
+//    Engine.run(PingpongEngineLogic)
 }
 
 private val fullPathFontMain = ResourceProvider.getResourceAsFile("font.main.ttf").absolutePath

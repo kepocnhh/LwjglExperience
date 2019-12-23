@@ -8,7 +8,12 @@ import lwjgl.window.WindowSize
 import lwjgl.window.closeWindow
 import lwjgl.window.loopWindow
 import org.lwjgl.glfw.GLFW
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
+
+private const val nanoInSecond = 1_000_000_000L
 
 private class MutableEngineInputKeyboardState: EngineInputState.Keyboard {
     override val printableKeys: MutableMap<PrintableKey, KeyStatus> = mutableMapOf<PrintableKey, KeyStatus>().also { statuses ->
@@ -26,87 +31,137 @@ private class MutableEngineInputState: EngineInputState {
     override val keyboard: MutableEngineInputKeyboardState = MutableEngineInputKeyboardState()
 }
 
-object Engine {
-    private const val nanoInSecond = 1_000_000_000L
+private fun getCurrentTimeFrame(timeLast: Long): Long {
+    return System.nanoTime() - timeLast
+}
+private fun syncTimeFrame(timeLast: Long, timeFrame: Double) {
+    while (true) {
+        val dif = getCurrentTimeFrame(timeLast)
+        if(dif >= timeFrame) return
+        val timeFrameHalf = timeFrame / 2
+        if(dif < timeFrameHalf) {
+            Thread.sleep(timeFrameHalf.toLong() / 1_000_000)
+        }
+    }
+}
 
+object Engine {
     fun run(logic: EngineLogic) {
+        val isWindowClosed = AtomicBoolean(false)
         val mutableEngineInputState = MutableEngineInputState()
+//        val isRenderAsync = true
+        val isRenderAsync = false
+//        val isFixFrameRate = true
+        val isFixFrameRate = false
 
         var timeRenderLast = 0L
         val timeRenderFrame = nanoInSecond.toDouble() / logic.framesPerSecondExpected // todo mutable fps?
+        val callbackQueue: BlockingQueue<() -> Unit> = LinkedBlockingQueue()
         loopWindow(
             windowSize = WindowSize.Exact(size = Size(width = 640, height = 480)),
 //            windowSize = WindowSize.FullScreen,
             title = "Engine",
             onKeyCallback = { _, key, _, action, _ ->
                 val keyStatus = action.toKeyStatusOrNull()
-                if(keyStatus != null) {
+                if(keyStatus != null && keyStatus != KeyStatus.REPEAT) {
                     val printableKey = key.toPrintableKeyOrNull()
                     if(printableKey != null) {
                         println("printable key = $printableKey, action = $keyStatus")
                         mutableEngineInputState.keyboard.printableKeys[printableKey] = keyStatus
-                        logic.engineInputCallback.onPrintableKey(printableKey, keyStatus)
+                        if(isRenderAsync) {
+                            callbackQueue.offer {
+                                logic.engineInputCallback.onPrintableKey(printableKey, keyStatus)
+                            }
+                        } else {
+                            logic.engineInputCallback.onPrintableKey(printableKey, keyStatus)
+                        }
                     } else {
                         val functionKey = key.toFunctionKeyOrNull()
                         if(functionKey != null) {
                             println("function key = $functionKey, action = $keyStatus")
                             mutableEngineInputState.keyboard.functionKeys[functionKey] = keyStatus
-                            logic.engineInputCallback.onFunctionKey(functionKey, keyStatus)
+                            if(isRenderAsync) {
+                                callbackQueue.offer {
+                                    logic.engineInputCallback.onFunctionKey(functionKey, keyStatus)
+                                }
+                            } else {
+                                logic.engineInputCallback.onFunctionKey(functionKey, keyStatus)
+                            }
                         }
                     }
                 }
             },
+            onWindowCloseCallback = {
+                isWindowClosed.set(true)
+            },
             onPreLoop = { windowId ->
-                var timeLogicLast = 0L
-                val timeLogicFrame = nanoInSecond.toDouble() / 25
+                if(!isRenderAsync) return@loopWindow
+                fun shouldEngineStop(): Boolean {
+                    return logic.shouldEngineStop || GLFW.glfwWindowShouldClose(windowId) || isWindowClosed.get()
+                }
+
+                val timeLogicFrame = nanoInSecond.toDouble() / 120
+
+                var timeInputLast = System.nanoTime()
                 thread {
-                    while (!logic.shouldEngineStop && !GLFW.glfwWindowShouldClose(windowId)) {
+                    println("input loop started")
+                    while (!shouldEngineStop()) {
+                        if(isFixFrameRate) syncTimeFrame(timeLast = timeInputLast, timeFrame = timeLogicFrame)
                         while (true) {
-                            val dif = System.nanoTime() - timeLogicLast
-                            if(dif > timeLogicFrame) break
-                            val timeFrameHalf = timeLogicFrame / 2
-                            if(dif < timeFrameHalf) {
-                                Thread.sleep(timeFrameHalf.toLong() / 1_000_000)
-                            }
+                            val action = callbackQueue.poll() ?: break
+                            action()
                         }
+                        timeInputLast = System.nanoTime()
+                    }
+                    println("input loop finished")
+                }
+
+                var timeLogicLast = System.nanoTime()
+                thread {
+                    println("logic loop started")
+                    while (!shouldEngineStop()) {
+                        if(isFixFrameRate) syncTimeFrame(timeLast = timeLogicLast, timeFrame = timeLogicFrame)
+                        val timeNow = System.nanoTime()
                         logic.onUpdateState(
                             engineInputState = mutableEngineInputState,
                             engineProperty = EngineProperty(
                                 timeLast = timeLogicLast,
-                                timeNow = System.nanoTime(),
+                                timeNow = timeNow,
                                 pictureSize = glfwGetWindowSize(windowId)
                             )
                         )
-                        timeLogicLast = System.nanoTime()
+                        timeLogicLast = timeNow
                     }
+                    println("logic loop finished")
                 }
             },
             onPostLoop = {
                 //todo
             },
             onRender = { windowId, canvas ->
-                while (true) {
-                    val dif = System.nanoTime() - timeRenderLast
-                    if(dif > timeRenderFrame) break
-                    val timeFrameHalf = timeRenderFrame / 2
-                    if(dif < timeFrameHalf) {
-                        Thread.sleep(timeFrameHalf.toLong() / 1_000_000)
-                    }
+                if(!isRenderAsync) {
+                    val timeNow = System.nanoTime()
+                    logic.onUpdateState(
+                        engineInputState = mutableEngineInputState,
+                        engineProperty = EngineProperty(
+                            timeLast = timeRenderLast,
+                            timeNow = timeNow,
+                            pictureSize = glfwGetWindowSize(windowId)
+                        )
+                    )
                 }
-//                logic.onUpdateState(
-//                    engineInputState = mutableEngineInputState,
-//                    engineProperty = EngineProperty(timeLast = timeRenderLast, timeNow = System.nanoTime())
-//                )
+                if(isFixFrameRate) syncTimeFrame(timeLast = timeRenderLast, timeFrame = timeRenderFrame)
+                val timeNow = System.nanoTime()
                 logic.onRender(
                     canvas,
                     engineInputState = mutableEngineInputState,
                     engineProperty = EngineProperty(
                         timeLast = timeRenderLast,
-                        timeNow = System.nanoTime(),
+                        timeNow = timeNow,
                         pictureSize = glfwGetWindowSize(windowId)
                     )
                 )
-                timeRenderLast = System.nanoTime()
+                timeRenderLast = timeNow
                 if(logic.shouldEngineStop) {
                     closeWindow(windowId)
                 }

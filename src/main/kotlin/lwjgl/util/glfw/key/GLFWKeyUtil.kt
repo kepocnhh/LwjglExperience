@@ -2,6 +2,7 @@ package lwjgl.util.glfw.key
 
 import org.lwjgl.glfw.GLFW
 import org.lwjgl.glfw.GLFWKeyCallback
+import org.lwjgl.glfw.GLFWWindowCloseCallbackI
 
 fun glfwKeyCallback(
     onKeyCallback: (Long, Int, Int, Int, Int) -> Unit
@@ -11,25 +12,13 @@ fun glfwKeyCallback(
     }
 }
 
-
-enum class KeyType {
-    A,
-    D,
-    S,
-    W,
-    ESCAPE,
-    ENTER,
-}
-
-fun Int.toKeyTypeOrNull(): KeyType? {
-    return when(this) {
-        GLFW.GLFW_KEY_ENTER -> KeyType.ENTER
-        GLFW.GLFW_KEY_ESCAPE -> KeyType.ESCAPE
-        GLFW.GLFW_KEY_A -> KeyType.A
-        GLFW.GLFW_KEY_D -> KeyType.D
-        GLFW.GLFW_KEY_S -> KeyType.S
-        GLFW.GLFW_KEY_W -> KeyType.W
-        else -> null
+fun glfwWindowCloseCallback(
+    onWindowCloseCallback: (Long) -> Unit
+): GLFWWindowCloseCallbackI {
+    return object: GLFWWindowCloseCallbackI {
+        override fun invoke(window: Long) {
+            onWindowCloseCallback(window)
+        }
     }
 }
 

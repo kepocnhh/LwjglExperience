@@ -4,6 +4,7 @@ import lwjgl.canvas.Canvas
 import lwjgl.entity.*
 import lwjgl.util.glfw.glfwGetWindowSize
 import lwjgl.util.glfw.key.glfwKeyCallback
+import lwjgl.util.glfw.key.glfwWindowCloseCallback
 import lwjgl.util.glfw.opengl.*
 import lwjgl.util.glfw.primitive.toGLFWInt
 import org.lwjgl.glfw.Callbacks.glfwFreeCallbacks
@@ -34,6 +35,7 @@ fun createWindow(
     isVisible: Boolean,
     isResizable: Boolean,
     onKeyCallback: (Long, Int, Int, Int, Int) -> Unit,
+    onWindowCloseCallback: (Long) -> Unit,
     windowSize: WindowSize,
     title: String,
     monitorIdSupplier: () -> Long
@@ -55,11 +57,19 @@ fun createWindow(
     val windowId: Long
     when(windowSize) {
         WindowSize.FullScreen -> {
+//            windowId = GLFW.glfwCreateWindow(
+//                videoMode.width(),
+//                videoMode.height(),
+//                title,
+//                monitorId,
+//                MemoryUtil.NULL
+//            )
+            GLFW.glfwWindowHint(GLFW.GLFW_DECORATED, false.toGLFWInt())
             windowId = GLFW.glfwCreateWindow(
                 videoMode.width(),
                 videoMode.height(),
                 title,
-                monitorId,
+                MemoryUtil.NULL,
                 MemoryUtil.NULL
             )
         }
@@ -100,6 +110,7 @@ fun createWindow(
     GLFW.glfwSwapInterval(1)
     println("create window | show: $windowId")
     GLFW.glfwSetKeyCallback(windowId, glfwKeyCallback(onKeyCallback))
+    GLFW.glfwSetWindowCloseCallback(windowId, glfwWindowCloseCallback(onWindowCloseCallback))
     windows[windowId] = WindowStatus.CREATED
     println("create window | finish: $windowId")
     return windowId
@@ -193,6 +204,7 @@ fun loopWindow(
     windowSize: WindowSize,
     title: String,
     onKeyCallback: (Long, Int, Int, Int, Int) -> Unit,
+    onWindowCloseCallback: (Long) -> Unit,
     errorPrintStream: PrintStream = System.err,
     isVisible: Boolean = true,
     isResizable: Boolean = false,
@@ -206,6 +218,7 @@ fun loopWindow(
         isVisible,
         isResizable,
         onKeyCallback,
+        onWindowCloseCallback,
         windowSize,
         title,
         monitorIdSupplier
