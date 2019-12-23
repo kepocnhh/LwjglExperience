@@ -163,7 +163,7 @@ private fun onPostRender(windowId: Long) {
 
 fun loopWindow(
     windowId: Long,
-    onPreLoop: () -> Unit,
+    onPreLoop: (Long) -> Unit,
     onPostLoop: () -> Unit,
     onRender: (Long, Canvas) -> Unit
 ) {
@@ -178,7 +178,7 @@ fun loopWindow(
     windows[windowId] = WindowStatus.LOOPED
 
     val canvas = WindowCanvas(fontRender = fontRender())
-    onPreLoop()
+    onPreLoop(windowId)
     println("loop window: $windowId | start loop")
     while(!GLFW.glfwWindowShouldClose(windowId)) {
         onPreRender(windowId)
@@ -197,7 +197,7 @@ fun loopWindow(
     isVisible: Boolean = true,
     isResizable: Boolean = false,
     monitorIdSupplier: () -> Long = GLFW::glfwGetPrimaryMonitor,
-    onPreLoop: () -> Unit,
+    onPreLoop: (Long) -> Unit,
     onPostLoop: () -> Unit,
     onRender: (Long, Canvas) -> Unit
 ) {

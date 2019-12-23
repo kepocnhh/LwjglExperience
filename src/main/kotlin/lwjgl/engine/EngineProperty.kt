@@ -1,6 +1,9 @@
 package lwjgl.engine
 
-data class EngineRenderProperty(
+import lwjgl.entity.Size
+
+data class EngineProperty(
     val timeLast: Long,
-    val timeNow: Long
+    val timeNow: Long,
+    val pictureSize: Size
 )

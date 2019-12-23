@@ -2,66 +2,69 @@ package lwjgl.experience
 
 import lwjgl.canvas.Canvas
 import lwjgl.engine.Engine
+import lwjgl.engine.EngineInputCallback
+import lwjgl.engine.EngineInputState
 import lwjgl.engine.EngineLogic
-import lwjgl.engine.EngineRenderProperty
+import lwjgl.engine.EngineProperty
+import lwjgl.engine.FunctionKey
+import lwjgl.engine.PrintableKey
 import lwjgl.entity.*
 import lwjgl.game.pingpong.PingpongEngineLogic
 import lwjgl.util.glfw.key.KeyStatus
-import lwjgl.util.glfw.key.KeyType
-import lwjgl.util.glfw.key.toKeyStatusOrNull
-import lwjgl.util.glfw.key.toKeyTypeOrNull
-import lwjgl.util.glfw.opengl.glClearColor
 import lwjgl.util.resource.ResourceProvider
-import lwjgl.window.WindowSize
-import lwjgl.window.closeWindow
-import lwjgl.window.loopWindow
 import org.lwjgl.Version
-import java.util.*
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.concurrent.thread
-import kotlin.math.roundToInt
 
 private val defaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
 
 private const val nanoInSecond = 1_000_000_000L
-private const val framesPerSecond = 60
+private const val framesPerSecond = 120
+//private const val framesPerSecond = 60
 //private const val framesPerSecond = 30
 private const val gameObjectPxPerSecond = 100
 private const val gameObjectAcceleration = gameObjectPxPerSecond.toDouble() / nanoInSecond
 
 private object SimpleEngineLogic: EngineLogic {
-    override val framesPerSecondExpected: Int = framesPerSecond
+    private class GameObject(
+        var position: Point
+    )
+    private val gameObject = GameObject(position = Point(x = 0, y = 0))
 
-    override fun onKeyCallback(windowId: Long, keyType: KeyType, keyStatus: KeyStatus) {
-        when(keyType) {
-            KeyType.ESCAPE -> {
-                when(keyStatus) {
-                    KeyStatus.RELEASE -> {
-                        closeWindow(windowId)
+    override val framesPerSecondExpected: Int = framesPerSecond
+    private lateinit var shouldEngineStopUnit: Unit
+    override val shouldEngineStop: Boolean get() = ::shouldEngineStopUnit.isInitialized
+
+    override val engineInputCallback = object: EngineInputCallback {
+        override fun onPrintableKey(key: PrintableKey, status: KeyStatus) {
+            //todo
+        }
+
+        override fun onFunctionKey(key: FunctionKey, status: KeyStatus) {
+            when(key) {
+                FunctionKey.ESCAPE -> {
+                    when(status) {
+                        KeyStatus.RELEASE -> {
+                            shouldEngineStopUnit = Unit
+                        }
+                        else -> Unit//ignored
                     }
-                    else -> Unit//ignored
                 }
+                else -> Unit//ignored
             }
         }
     }
 
-    override fun onRender(
-        windowId: Long,
-        canvas: Canvas,
-        keysStatuses: Map<KeyType, KeyStatus>,
-        renderProperty: EngineRenderProperty
-    ) {
-        keysStatuses.forEach { (keyType, keyStatus) ->
-            when(keyType) {
-                KeyType.A -> {
-                    when(keyStatus) {
+    override fun onUpdateState(engineInputState: EngineInputState, engineProperty: EngineProperty) {
+        val printableKeys = engineInputState.keyboard.printableKeys
+        printableKeys.forEach { (key, status) ->
+            when(key) {
+                PrintableKey.A -> {
+                    when(status) {
                         KeyStatus.PRESS, KeyStatus.REPEAT -> {
-                            when(keysStatuses[KeyType.D]) {
+                            when(printableKeys[PrintableKey.D]) {
                                 KeyStatus.PRESS, KeyStatus.REPEAT -> return@forEach
                                 else -> Unit//ignored
                             }
-                            val timeDifference = System.nanoTime() - renderProperty.timeLast
+                            val timeDifference = engineProperty.timeNow - engineProperty.timeLast
                             val delta = timeDifference * gameObjectAcceleration
                             gameObject.position = Point(
                                 x = gameObject.position.x - delta.toFloat(),
@@ -70,14 +73,14 @@ private object SimpleEngineLogic: EngineLogic {
                         }
                     }
                 }
-                KeyType.D -> {
-                    when(keyStatus) {
+                PrintableKey.D -> {
+                    when(status) {
                         KeyStatus.PRESS, KeyStatus.REPEAT -> {
-                            when(keysStatuses[KeyType.A]) {
+                            when(printableKeys[PrintableKey.A]) {
                                 KeyStatus.PRESS, KeyStatus.REPEAT -> return@forEach
                                 else -> Unit//ignored
                             }
-                            val timeDifference = System.nanoTime() - renderProperty.timeLast
+                            val timeDifference = System.nanoTime() - engineProperty.timeLast
                             val delta = timeDifference * gameObjectAcceleration
                             gameObject.position = Point(
                                 x = gameObject.position.x + delta.toFloat(),
@@ -86,10 +89,14 @@ private object SimpleEngineLogic: EngineLogic {
                         }
                     }
                 }
-                KeyType.S -> {
-                    when(keyStatus) {
+                PrintableKey.S -> {
+                    when(status) {
                         KeyStatus.PRESS, KeyStatus.REPEAT -> {
-                            val timeDifference = System.nanoTime() - renderProperty.timeLast
+                            when(printableKeys[PrintableKey.W]) {
+                                KeyStatus.PRESS, KeyStatus.REPEAT -> return@forEach
+                                else -> Unit//ignored
+                            }
+                            val timeDifference = System.nanoTime() - engineProperty.timeLast
                             val delta = timeDifference * gameObjectAcceleration
                             gameObject.position = Point(
                                 x = gameObject.position.x,
@@ -98,10 +105,14 @@ private object SimpleEngineLogic: EngineLogic {
                         }
                     }
                 }
-                KeyType.W -> {
-                    when(keyStatus) {
+                PrintableKey.W -> {
+                    when(status) {
                         KeyStatus.PRESS, KeyStatus.REPEAT -> {
-                            val timeDifference = System.nanoTime() - renderProperty.timeLast
+                            when(printableKeys[PrintableKey.S]) {
+                                KeyStatus.PRESS, KeyStatus.REPEAT -> return@forEach
+                                else -> Unit//ignored
+                            }
+                            val timeDifference = System.nanoTime() - engineProperty.timeLast
                             val delta = timeDifference * gameObjectAcceleration
                             gameObject.position = Point(
                                 x = gameObject.position.x,
@@ -112,8 +123,15 @@ private object SimpleEngineLogic: EngineLogic {
                 }
             }
         }
+    }
 
-        val fps = nanoInSecond.toDouble() / (renderProperty.timeNow - renderProperty.timeLast)
+    override fun onRender(
+        canvas: Canvas,
+        engineInputState: EngineInputState,
+        engineProperty: EngineProperty
+    ) {
+
+        val fps = nanoInSecond.toDouble() / (engineProperty.timeNow - engineProperty.timeLast)
 
         canvas.drawRectangle(
             color = Color.GREEN,
@@ -152,11 +170,6 @@ fun main() {
 //    Engine.run(SimpleEngineLogic)
     Engine.run(PingpongEngineLogic)
 }
-
-private class GameObject(
-    var position: Point
-)
-private val gameObject = GameObject(position = Point(x = 0, y = 0))
 
 private val fullPathFontMain = ResourceProvider.getResourceAsFile("font.main.ttf").absolutePath
 private fun Canvas.drawText(

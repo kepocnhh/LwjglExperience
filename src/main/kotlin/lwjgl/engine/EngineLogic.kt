@@ -6,12 +6,16 @@ import lwjgl.util.glfw.key.KeyType
 
 interface EngineLogic {
     val framesPerSecondExpected: Int
+    val shouldEngineStop: Boolean
+    val engineInputCallback: EngineInputCallback
 
-    fun onKeyCallback(windowId: Long, keyType: KeyType, keyStatus: KeyStatus)
+    fun onUpdateState(
+        engineInputState: EngineInputState,
+        engineProperty: EngineProperty
+    )
     fun onRender(
-        windowId: Long,
         canvas: Canvas,
-        keysStatuses: Map<KeyType, KeyStatus>,
-        renderProperty: EngineRenderProperty
+        engineInputState: EngineInputState,
+        engineProperty: EngineProperty
     )
 }
