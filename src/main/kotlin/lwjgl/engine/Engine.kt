@@ -55,6 +55,7 @@ object Engine {
         val isFixFrameRate = false
 
         var timeRenderLast = 0L
+        var timeLogicLast = 0L
         val timeRenderFrame = nanoInSecond.toDouble() / logic.framesPerSecondExpected // todo mutable fps?
         val callbackQueue: BlockingQueue<() -> Unit> = LinkedBlockingQueue()
         loopWindow(
@@ -116,7 +117,6 @@ object Engine {
                     println("input loop finished")
                 }
 
-                var timeLogicLast = System.nanoTime()
                 thread {
                     println("logic loop started")
                     while (!shouldEngineStop()) {
@@ -144,11 +144,12 @@ object Engine {
                     logic.onUpdateState(
                         engineInputState = mutableEngineInputState,
                         engineProperty = EngineProperty(
-                            timeLast = timeRenderLast,
+                            timeLast = timeLogicLast,
                             timeNow = timeNow,
                             pictureSize = glfwGetWindowSize(windowId)
                         )
                     )
+                    timeLogicLast = timeNow
                 }
                 if(isFixFrameRate) syncTimeFrame(timeLast = timeRenderLast, timeFrame = timeRenderFrame)
                 val timeNow = System.nanoTime()

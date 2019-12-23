@@ -108,6 +108,7 @@ fun createWindow(
     """.trimIndent())
 
     GLFW.glfwSwapInterval(1)
+//    GLFW.glfwSwapInterval(0)
     println("create window | show: $windowId")
     GLFW.glfwSetKeyCallback(windowId, glfwKeyCallback(onKeyCallback))
     GLFW.glfwSetWindowCloseCallback(windowId, glfwWindowCloseCallback(onWindowCloseCallback))
