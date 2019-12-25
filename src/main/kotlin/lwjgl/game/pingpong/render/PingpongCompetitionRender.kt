@@ -6,10 +6,9 @@ import lwjgl.engine.EngineProperty
 import lwjgl.entity.Point
 import lwjgl.entity.Size
 import lwjgl.entity.square
-import lwjgl.game.pingpong.PingpongGameSettings
-import lwjgl.game.pingpong.PingpongGameState
+import lwjgl.game.pingpong.*
 
-class PingpongCompetitionRender: PingpongRender {
+object PingpongCompetitionRender: PingpongRender {
     override fun onRender(
         canvas: Canvas,
         gameState: PingpongGameState,
@@ -17,51 +16,53 @@ class PingpongCompetitionRender: PingpongRender {
         engineInputState: EngineInputState,
         engineProperty: EngineProperty
     ) {
-        val tableTopLeft: Point
-        val tableSize: Size
-        if(engineProperty.pictureSize.width > engineProperty.pictureSize.height) {
-            val height = engineProperty.pictureSize.height * 0.8
-            val width = height / 2 * 3
-            tableSize = Size(
-                width = width.toInt(),
-                height = height.toInt()
-            )
-            tableTopLeft = Point(
-                x = (engineProperty.pictureSize.width - width) / 2,
-                y = (engineProperty.pictureSize.height - height) / 2
-            )
-        } else {
-            TODO()
-        }
+        val tableSize = getTableSize(engineProperty.pictureSize)
+        val tableTopLeft = getTableTopLeft(engineProperty.pictureSize, tableSize = tableSize)
 
-        canvas.drawRectangle(
+//        canvas.drawRectangle(
+//            gameSettings.defaultColor,
+//            pointTopLeft = tableTopLeft,
+//            size = tableSize
+//        )
+        canvas.drawLine(
             gameSettings.defaultColor,
-            pointTopLeft = tableTopLeft,
-            size = tableSize
+            point1 = tableTopLeft,
+            point2 = Point(
+                x = tableTopLeft.x + tableSize.width,
+                y = tableTopLeft.y
+            )
         )
-
-        val ballSize = square(20)
-        val ballRelativeWidth = tableSize.width - ballSize.width
-        val ballRelativeHeight = tableSize.height - ballSize.height
-        val ballX = tableTopLeft.x + ballRelativeWidth * gameState.competition.environment.ballCoordinate.xPercent
-        val ballY = tableTopLeft.y + ballRelativeHeight * gameState.competition.environment.ballCoordinate.yPercent
-        canvas.drawRectangle(
+        canvas.drawLine(
             gameSettings.defaultColor,
-            pointTopLeft = Point(
-                x = ballX,
-                y = ballY
+            point1 = Point(
+                x = tableTopLeft.x,
+                y = tableTopLeft.y + tableSize.height
             ),
-            size = ballSize
+            point2 = Point(
+                x = tableTopLeft.x + tableSize.width,
+                y = tableTopLeft.y + tableSize.height
+            )
+        )
+        canvas.drawLine(
+            gameSettings.defaultColor,
+            point1 = Point(
+                x = tableTopLeft.x + tableSize.width,
+                y = tableTopLeft.y
+            ),
+            point2 = Point(
+                x = tableTopLeft.x + tableSize.width,
+                y = tableTopLeft.y + tableSize.height
+            )
         )
 
-        val playerRacketSize = Size(
-            width = 16,
-            height = 64
-        )
+        val environment = gameState.competition.environment
+        checkNotNull(environment)
+
+        val playerRacketSize = getPlayerRacketSize()
         val playerRacketRelativeHeight = tableSize.height - playerRacketSize.height
 
         val playerLeftX = tableTopLeft.x - playerRacketSize.width
-        val playerLeftY = tableTopLeft.y + playerRacketRelativeHeight * gameState.competition.environment.playerLeftYPercent.value
+        val playerLeftY = tableTopLeft.y + playerRacketRelativeHeight * environment.playerLeftYPercent.value
         canvas.drawRectangle(
             gameSettings.defaultColor,
             pointTopLeft = Point(
@@ -70,39 +71,53 @@ class PingpongCompetitionRender: PingpongRender {
             ),
             size = playerRacketSize
         )
-        canvas.drawLine(
-            gameSettings.defaultColor,
-            point1 = Point(
-                x = 0.0,
-                y = playerLeftY + playerRacketSize.height / 2
-            ),
-            point2 = Point(
-                x = engineProperty.pictureSize.width.toDouble(),
-                y = playerLeftY + playerRacketSize.height / 2
-            )
-        )
+//        canvas.drawLine(
+//            gameSettings.defaultColor,
+//            point1 = Point(
+//                x = 0.0,
+//                y = playerLeftY + playerRacketSize.height / 2
+//            ),
+//            point2 = Point(
+//                x = engineProperty.pictureSize.width.toDouble(),
+//                y = playerLeftY + playerRacketSize.height / 2
+//            )
+//        )
 
-        //debug
+        val ballSize = getBallSize()
 
-        canvas.drawLine(
-            gameSettings.defaultColor,
-            point1 = Point(x = 0, y = engineProperty.pictureSize.height / 2),
-            point2 = Point(
-                x = engineProperty.pictureSize.width,
-                y = engineProperty.pictureSize.height / 2
-            )
-        )
+        when(environment.state) {
+            PingpongGameState.Competition.Environment.State.PITCH -> {
+                canvas.drawRectangle(
+                    gameSettings.defaultColor,
+                    pointTopLeft = Point(
+                        x = playerLeftX + playerRacketSize.width,
+                        y = playerLeftY.toFloat() + playerRacketSize.height/2 - ballSize.height/2
+                    ),
+                    size = ballSize
+                )
+            }
+            PingpongGameState.Competition.Environment.State.GAME -> {
+                val ballRelativeWidth = tableSize.width - ballSize.width
+                val ballRelativeHeight = tableSize.height - ballSize.height
+                val ballX = tableTopLeft.x + ballRelativeWidth * environment.ballCoordinate.xPercent
+                val ballY = tableTopLeft.y + ballRelativeHeight * environment.ballCoordinate.yPercent
+                canvas.drawRectangle(
+                    gameSettings.defaultColor,
+                    pointTopLeft = Point(
+                        x = ballX,
+                        y = ballY
+                    ),
+                    size = ballSize
+                )
 
-        canvas.drawLine(
-            gameSettings.defaultColor,
-            point1 = Point(
-                x = engineProperty.pictureSize.width / 2,
-                y = 0
-            ),
-            point2 = Point(
-                x = engineProperty.pictureSize.width / 2,
-                y = engineProperty.pictureSize.height
-            )
-        )
+                canvas.drawText(gameSettings,
+                    pointTopLeft = Point(
+                        x = 0.toFloat(),
+                        y = engineProperty.pictureSize.height - gameSettings.defaultFontHeight
+                    ),
+                    text = "ball(${ballX.toInt()}:${ballY.toInt()}, ${environment.ballDirection.value})"
+                )
+            }
+        }
     }
 }

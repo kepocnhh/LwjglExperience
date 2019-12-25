@@ -1,5 +1,6 @@
 package lwjgl.game.pingpong
 
+import lwjgl.entity.Degrees
 import lwjgl.entity.Percent
 import lwjgl.entity.PointPercent
 
@@ -17,20 +18,22 @@ interface PingpongGameState {
     }
 
     interface Competition {
-        enum class Status {
-            STARTED,
-            PAUSED,
-        }
-
-        val status: Status?
-
         interface Environment {
+            val isPaused: Boolean
             val playerLeftYPercent: Percent
             val playerRightYPercent: Percent
             val ballCoordinate: PointPercent
+            val ballDirection: Degrees
+
+            enum class State {
+                PITCH,
+                GAME
+            }
+
+            val state: State
         }
 
-        val environment: Environment
+        val environment: Environment?
     }
 
     enum class Common {

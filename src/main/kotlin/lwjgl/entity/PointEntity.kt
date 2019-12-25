@@ -1,5 +1,7 @@
 package lwjgl.entity
 
+import kotlin.math.PI
+
 data class Point(
     val x: Float,
     val y: Float
@@ -23,5 +25,36 @@ data class Percent(
 ) {
     init {
         check(value in 0.0..1.0)
+    }
+}
+
+class Degrees(
+    value: Double
+) {
+    companion object {
+        const val maxDegreesValue = PI * 2
+    }
+
+    val value: Double
+
+    init {
+        when {
+            value > maxDegreesValue -> {
+                this.value = value % maxDegreesValue
+            }
+            value < - maxDegreesValue -> {
+                this.value = maxDegreesValue + value % maxDegreesValue
+            }
+            value < 0 -> {
+                this.value = maxDegreesValue + value
+            }
+            else -> {
+                this.value = value
+            }
+        }
+    }
+
+    override fun toString(): String {
+        return "Degrees($value)"
     }
 }

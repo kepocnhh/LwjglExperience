@@ -8,5 +8,8 @@ class MutablePingpongGameSettings(
     override var defaultColor: Color,
     override var defaultFontHeight: Float
 ) : PingpongGameSettings {
-    override val playerRacketPercentPerSecond = Percent(0.2)
+    override val playerRacketPercentPerSecond = Percent(0.4)
+    override val ballPercentPerSecond = Percent(0.5)
+    override var isDebugEnabled: Boolean = false
+    override var timeStart: Long = -1
 }

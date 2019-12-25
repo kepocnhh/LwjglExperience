@@ -1,5 +1,6 @@
 package lwjgl.game.pingpong
 
+import lwjgl.entity.Degrees
 import lwjgl.entity.Percent
 import lwjgl.entity.PointPercent
 
@@ -7,14 +8,17 @@ class MutablePingpongMainMenuState: PingpongGameState.MainMenu {
     override var selectedMenuItem = PingpongGameState.MainMenu.Item.START_NEW_GAME
 }
 
-class MutablePingpongCompetitionEnvironment: PingpongGameState.Competition.Environment {
-    override var playerLeftYPercent = Percent(0.0)
-    override var playerRightYPercent = Percent(0.0)
-    override var ballCoordinate = PointPercent(0.0, 0.0)
-}
+class MutablePingpongCompetitionEnvironment(
+    override var isPaused: Boolean,
+    override var playerLeftYPercent: Percent,
+    override var playerRightYPercent: Percent,
+    override var ballCoordinate: PointPercent,
+    override var ballDirection: Degrees,
+    override var state: PingpongGameState.Competition.Environment.State
+): PingpongGameState.Competition.Environment
+
 class MutablePingpongCompetitionState: PingpongGameState.Competition {
-    override var status: PingpongGameState.Competition.Status? = null
-    override val environment: MutablePingpongCompetitionEnvironment = MutablePingpongCompetitionEnvironment()
+    override var environment: MutablePingpongCompetitionEnvironment? = null
 }
 
 class MutablePingpongGameState: PingpongGameState {

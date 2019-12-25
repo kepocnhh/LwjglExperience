@@ -17,12 +17,11 @@ import org.lwjgl.Version
 private val defaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
 
 private object SimpleEngineLogic: EngineLogic {
-    private const val nanoInSecond = 1_000_000_000L
     //private const val framesPerSecond = 120
     private const val framesPerSecond = 60
     //private const val framesPerSecond = 30
     private const val gameObjectPxPerSecond = 100
-    private const val gameObjectAcceleration = gameObjectPxPerSecond.toDouble() / nanoInSecond
+    private const val gameObjectAcceleration = gameObjectPxPerSecond.toDouble() / Engine.nanoInSecond
 
     private class GameObject(
         var position: Point
@@ -53,6 +52,9 @@ private object SimpleEngineLogic: EngineLogic {
         }
     }
 
+    override fun onPreLoop() {
+        //todo
+    }
     override fun onUpdateState(engineInputState: EngineInputState, engineProperty: EngineProperty) {
         val printableKeys = engineInputState.keyboard.printableKeys
 //        val sleepTime = 1_000L.toDouble() / 60
@@ -133,7 +135,7 @@ private object SimpleEngineLogic: EngineLogic {
         engineProperty: EngineProperty
     ) {
 
-        val fps = nanoInSecond.toDouble() / (engineProperty.timeNow - engineProperty.timeLast)
+        val fps = Engine.nanoInSecond.toDouble() / (engineProperty.timeNow - engineProperty.timeLast)
 
         canvas.drawRectangle(
             color = Color.GREEN,

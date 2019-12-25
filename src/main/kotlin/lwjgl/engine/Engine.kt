@@ -96,6 +96,7 @@ object Engine {
                 isWindowClosed.set(true)
             },
             onPreLoop = { windowId ->
+                logic.onPreLoop()
                 if(!isRenderAsync) return@loopWindow
                 fun shouldEngineStop(): Boolean {
                     return logic.shouldEngineStop || GLFW.glfwWindowShouldClose(windowId) || isWindowClosed.get()

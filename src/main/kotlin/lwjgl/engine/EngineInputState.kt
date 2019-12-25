@@ -17,6 +17,7 @@ enum class PrintableKey {
     D,
     S,
     W,
+    U,
 }
 
 fun Int.toPrintableKeyOrNull(): PrintableKey? {
@@ -25,6 +26,7 @@ fun Int.toPrintableKeyOrNull(): PrintableKey? {
         GLFW.GLFW_KEY_D -> PrintableKey.D
         GLFW.GLFW_KEY_S -> PrintableKey.S
         GLFW.GLFW_KEY_W -> PrintableKey.W
+        GLFW.GLFW_KEY_U -> PrintableKey.U
         else -> null
     }
 }
@@ -32,12 +34,14 @@ fun Int.toPrintableKeyOrNull(): PrintableKey? {
 enum class FunctionKey {
     ESCAPE,
     ENTER,
+    SPACE,
 }
 
 fun Int.toFunctionKeyOrNull(): FunctionKey? {
     return when(this) {
         GLFW.GLFW_KEY_ESCAPE -> FunctionKey.ESCAPE
         GLFW.GLFW_KEY_ENTER -> FunctionKey.ENTER
+        GLFW.GLFW_KEY_SPACE -> FunctionKey.SPACE
         else -> null
     }
 }

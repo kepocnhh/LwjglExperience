@@ -7,5 +7,10 @@ interface PingpongGameSettings {
     val fullPathFontMain: String
     val defaultColor: Color
     val defaultFontHeight: Float
+
     val playerRacketPercentPerSecond: Percent
+    val ballPercentPerSecond: Percent
+
+    val timeStart: Long
+    val isDebugEnabled: Boolean
 }

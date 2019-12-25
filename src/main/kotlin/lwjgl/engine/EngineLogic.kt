@@ -7,6 +7,7 @@ interface EngineLogic {
     val shouldEngineStop: Boolean
     val engineInputCallback: EngineInputCallback
 
+    fun onPreLoop()
     fun onUpdateState(
         engineInputState: EngineInputState,
         engineProperty: EngineProperty
