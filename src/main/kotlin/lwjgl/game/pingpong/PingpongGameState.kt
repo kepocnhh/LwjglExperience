@@ -1,5 +1,8 @@
 package lwjgl.game.pingpong
 
+import lwjgl.entity.Percent
+import lwjgl.entity.PointPercent
+
 interface PingpongGameState {
     val shouldEngineStop: Boolean
 
@@ -20,6 +23,14 @@ interface PingpongGameState {
         }
 
         val status: Status?
+
+        interface Environment {
+            val playerLeftYPercent: Percent
+            val playerRightYPercent: Percent
+            val ballCoordinate: PointPercent
+        }
+
+        val environment: Environment
     }
 
     enum class Common {

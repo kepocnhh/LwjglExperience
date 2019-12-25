@@ -25,6 +25,11 @@ fun glfwWindowCloseCallback(
 enum class KeyStatus {
     RELEASE,
     PRESS,
+    @Deprecated(
+        message = """
+            doubtful
+        """
+    )
     REPEAT
 }
 

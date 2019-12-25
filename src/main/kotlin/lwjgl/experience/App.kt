@@ -16,14 +16,14 @@ import org.lwjgl.Version
 
 private val defaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
 
-private const val nanoInSecond = 1_000_000_000L
-//private const val framesPerSecond = 120
-private const val framesPerSecond = 60
-//private const val framesPerSecond = 30
-private const val gameObjectPxPerSecond = 100
-private const val gameObjectAcceleration = gameObjectPxPerSecond.toDouble() / nanoInSecond
-
 private object SimpleEngineLogic: EngineLogic {
+    private const val nanoInSecond = 1_000_000_000L
+    //private const val framesPerSecond = 120
+    private const val framesPerSecond = 60
+    //private const val framesPerSecond = 30
+    private const val gameObjectPxPerSecond = 100
+    private const val gameObjectAcceleration = gameObjectPxPerSecond.toDouble() / nanoInSecond
+
     private class GameObject(
         var position: Point
     )
@@ -169,8 +169,8 @@ fun main() {
         }
         defaultExceptionHandler.uncaughtException(thread, throwable)
     }
-    Engine.run(SimpleEngineLogic)
-//    Engine.run(PingpongEngineLogic)
+//    Engine.run(SimpleEngineLogic)
+    Engine.run(PingpongEngineLogic)
 }
 
 private val fullPathFontMain = ResourceProvider.getResourceAsFile("font.main.ttf").absolutePath

@@ -13,8 +13,6 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 
-private const val nanoInSecond = 1_000_000_000L
-
 private class MutableEngineInputKeyboardState: EngineInputState.Keyboard {
     override val printableKeys: MutableMap<PrintableKey, KeyStatus> = mutableMapOf<PrintableKey, KeyStatus>().also { statuses ->
         PrintableKey.values().forEach { keyType ->
@@ -46,6 +44,8 @@ private fun syncTimeFrame(timeLast: Long, timeFrame: Double) {
 }
 
 object Engine {
+    const val nanoInSecond = 1_000_000_000L
+
     fun run(logic: EngineLogic) {
         val isWindowClosed = AtomicBoolean(false)
         val mutableEngineInputState = MutableEngineInputState()

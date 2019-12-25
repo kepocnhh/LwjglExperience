@@ -3,7 +3,12 @@ package lwjgl.game.pingpong
 fun PingpongGameState.getAvailableMenuItems(): Set<PingpongGameState.MainMenu.Item> {
     val result = when(competition.status) {
         PingpongGameState.Competition.Status.STARTED -> TODO()
-        PingpongGameState.Competition.Status.PAUSED -> TODO()
+        PingpongGameState.Competition.Status.PAUSED -> {
+            setOf(
+                PingpongGameState.MainMenu.Item.CONTINUE_GAME,
+                PingpongGameState.MainMenu.Item.EXIT
+            )
+        }
         null -> {
             setOf(
                 PingpongGameState.MainMenu.Item.START_NEW_GAME,
@@ -17,13 +22,15 @@ fun PingpongGameState.getAvailableMenuItems(): Set<PingpongGameState.MainMenu.It
 }
 
 fun PingpongGameState.getNextAvailableMenuItem(): PingpongGameState.MainMenu.Item {
-    return getAvailableMenuItems().firstOrNull {
+    val items = getAvailableMenuItems()
+    return items.firstOrNull {
         it.ordinal > mainMenu.selectedMenuItem.ordinal
-    } ?: PingpongGameState.MainMenu.Item.values().first()
+    } ?: items.first()
 }
 
 fun PingpongGameState.getPreviousAvailableMenuItem(): PingpongGameState.MainMenu.Item {
-    return getAvailableMenuItems().reversed().firstOrNull {
+    val items = getAvailableMenuItems()
+    return items.reversed().firstOrNull {
         it.ordinal < mainMenu.selectedMenuItem.ordinal
-    } ?: PingpongGameState.MainMenu.Item.values().last()
+    } ?: items.last()
 }
